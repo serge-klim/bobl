@@ -1,0 +1,13 @@
+import boost ;
+boost.use-project ;
+
+project
+    : requirements
+	<include>.
+	<define>BOOST_ALL_NO_LIB=1
+	<define>BOOST_TEST_NO_AUTO_LINK=1
+   	<toolset>msvc:<define>_SCL_SECURE_NO_WARNINGS
+    <toolset>msvc:<define>_ENABLE_ATOMIC_ALIGNMENT_FIX
+;
+
+build-project tests ;

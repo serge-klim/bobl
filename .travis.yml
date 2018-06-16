@@ -1,0 +1,146 @@
+language: cpp
+sudo: false
+
+branches:
+  except:
+  - build-cfg
+
+matrix:
+  include:
+    # - os: osx
+    #   osx_image: xcode9.4
+    #   env: >
+    #        COMPILER=clang++-5.0 TOOLSET=clang CPPSTD=c++1y
+    #        BOOST_VER=1.66.0
+    - os: linux
+      dist: trusty
+      env: >
+           COMPILER=g++-4.8 TOOLSET=gcc-4.8 CPPSTD=c++11
+           BOOST_VER=1.67.0
+      addons:
+        apt:
+          update: true
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.8
+            - libstdc++-4.8-dev
+    - os: linux
+      dist: precise
+      env: >
+           COMPILER=g++-4.9 TOOLSET=gcc-4.9 CPPSTD=c++11
+           BOOST_VER=1.67.0
+      addons:
+        apt:
+          update: true
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.9
+            - libstdc++-4.9-dev
+    - os: linux
+      dist: precise
+      env: >
+           COMPILER=g++-6 TOOLSET=gcc-6 CPPSTD=c++11
+           BOOST_VER=1.67.0
+      addons:
+        apt:
+          update: true
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-6
+            - libstdc++-6-dev
+    - os: linux
+      dist: trusty
+      env: >
+           COMPILER=g++-7 TOOLSET=gcc-7 CPPSTD=c++11
+           BOOST_VER=1.67.0
+      addons:
+        apt:
+          update: true
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+            - libstdc++-7-dev
+    - os: linux
+      dist: precise
+      env: >
+           COMPILER=clang++-3.6 TOOLSET=clang CPPSTD=c++1y
+           BOOST_VER=1.66.0
+      addons:
+        apt:
+          update: true
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.6
+          packages:
+            - clang-3.6
+    - os: linux
+      dist: trusty
+      env: >
+           COMPILER=clang++-4.0 TOOLSET=clang CPPSTD=c++1y
+           BOOST_VER=1.66.0
+      addons:
+        apt:
+          update: true
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-4.0
+          packages:
+            - clang-4.0
+    - os: linux
+      dist: trusty
+      env: >
+           COMPILER=clang++-6.0 TOOLSET=clang CPPSTD=c++1y
+           BOOST_VER=1.67.0
+           COVERAGE=ON
+      addons:
+        apt:
+          update: true
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-6.0
+          packages:
+            - clang-6.0
+            - llvm-6.0
+env:
+  global:
+    CODECOV_TOKEN="56b8a39c-e8af-4203-b273-c659ad985abe"
+
+install:
+  - |
+    if [[ "${COMPILER}" != "" ]]; then export CXX=${COMPILER}; fi
+    ${CXX} --version
+    cd ${TRAVIS_BUILD_DIR}
+  ############################################################################
+  # Install libc++ and libc++abi if needed
+  ############################################################################
+  - |
+    if [[ "${CXX%%+*}" == "clang" ]]; then
+      bash <( curl -s https://raw.githubusercontent.com/serge-klim/cihelpers/master/travis/lib++.install)
+      export B2FLAGS="${B2FLAGS} cxxflags=-isystem${TRAVIS_BUILD_DIR}/llvm/out/include/c++/v1 linkflags=-L${TRAVIS_BUILD_DIR}/llvm/out/lib"
+      export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${TRAVIS_BUILD_DIR}/llvm/out/lib"
+    fi
+  ############################################################################
+  # Download boost and build boost tests
+  ############################################################################
+  - |
+    cd ${TRAVIS_BUILD_DIR}
+    bash <( curl -s https://raw.githubusercontent.com/serge-klim/cihelpers/master/travis/boost.install) toolset=${TOOLSET} cxxflags="-std=${CPPSTD}" ${B2FLAGS} address-model=64 threading=multi --layout=versioned --with-test -d0 stage debug
+    export BOOST_ROOT=${TRAVIS_BUILD_DIR}/boost_${BOOST_VER//./_}    
+before_script:
+  - |
+    if [[ "${COVERAGE}" == "ON" ]]; then
+      export B2FLAGS="${B2FLAGS} cxxflags=\"--coverage\" linkflags=\"--coverage\""
+    fi
+  - cd ${TRAVIS_BUILD_DIR} && curl --retry 5 -s https://raw.githubusercontent.com/serge-klim/cihelpers/master/project-config.jam > project-config.jam
+script:
+  - ${BOOST_ROOT}/b2 toolset=${TOOLSET} cxxflags="-std=${CPPSTD}" ${B2FLAGS} address-model=64 threading=multi -a --layout=versioned -sBOOST_ROOT=${BOOST_ROOT} -sBOOST_VER=x64-${BOOST_VER%.*} -sBOOST_LIBS=${BOOST_ROOT}/stage/lib debug
+after_success:
+  - |
+    if [[ "${COVERAGE}" == "ON" ]]; then
+      find  -name "*.gcno" -exec llvm-cov-6.0 gcov -f -b "{}" \; > /dev/null
+      bash <(curl -s https://codecov.io/bash)
+    fi

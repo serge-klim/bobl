@@ -1,0 +1,15 @@
+
+exe gen :
+          main.cpp
+          : <library>/boost//headers
+            <library>/boost//iostreams/<link>static
+          ;
+
+exe test :
+          test.cpp
+          : <library>/boost//headers
+            <library>/boost//program_options/<link>static
+            <library>/boost//chrono/<link>static
+            <library>/boost//system/<link>static
+         ;
+

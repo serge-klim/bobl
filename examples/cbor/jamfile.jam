@@ -1,0 +1,20 @@
+project
+    : requirements 
+    <library>/boost//headers
+;
+
+exe simple1 :
+          simple1.cpp
+          ;
+
+exe simple2 :
+          simple2.cpp
+          ;
+
+exe simple3 :
+          simple3.cpp
+          ;
+
+exe extended :
+          extended.cpp
+          ;
