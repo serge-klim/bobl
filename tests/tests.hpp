@@ -1,5 +1,6 @@
 #pragma once
 #include "bobl/utility/diversion.hpp"
+#include "bobl/names.hpp"
 #include "bobl/bobl.hpp"
 #include <boost/uuid/uuid.hpp>
 #include <boost/fusion/adapted/struct/adapt_struct.hpp>
@@ -35,9 +36,39 @@ struct Simple
 BOOST_FUSION_ADAPT_STRUCT(
 	Simple,
 	enabled,
-    id,
+	id,
 	name,
 	theEnum)
+
+using SimpleTuple = std::tuple<bool, int, std::string, TheEnumClass>;
+
+namespace bobl{
+
+template<typename MemberType, typename Options> class MemberName <SimpleTuple, MemberType, 0, Options>
+{
+public:
+	constexpr char const* operator()() const { return "enabled"; }
+};
+
+template<typename MemberType, typename Options> class MemberName <SimpleTuple, MemberType, 1, Options>
+{
+public:
+	constexpr char const* operator()() const { return "id"; }
+};
+
+template<std::size_t Position, typename Options> class MemberName <SimpleTuple, std::string, Position , Options>
+{
+public:
+	constexpr char const* operator()() const { return "name"; }
+};
+
+template<typename MemberType, typename Options> class MemberName <SimpleTuple, MemberType, 3, Options>
+{
+public:
+	constexpr char const* operator()() const { return "theEnum"; }
+};
+
+}//namespace bobl
 
 struct SimpleOptional
 {

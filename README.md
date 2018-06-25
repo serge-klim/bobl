@@ -79,6 +79,53 @@ The resulting object will look like this (pseudo-json representation):
 ```
 	{'_0': True, '_1': 100, '_2': 'the name', '_3': 2}
 ``` 
+2. another way to do it is specialize:
+```
+#include "bobl/names.hpp"
+
+namespace bobl {
+  template<typename Type, typename MemberType, std::size_t Position, typename Options> class MemberName;
+}
+``` 
+something like this:
+```
+namespace bobl{
+
+	template<typename MemberType, typename Options> class MemberName <SimpleTuple, MemberType, 0, Options>
+	{
+	public:
+		constexpr char const* operator()() const { return "enabled"; }
+	};
+
+	template<typename Options> class MemberName <SimpleTuple, int, 1, Options>
+	{
+	public:
+		constexpr char const* operator()() const { return "id"; }
+	};
+
+	template<std::size_t Position, typename Options> class MemberName <SimpleTuple, std::string, Position , Options>
+	{
+	public:
+		constexpr char const* operator()() const { return "name"; }
+	};
+
+	template<typename MemberType, typename Options> class MemberName <SimpleTuple, MemberType, 3, Options>
+	{
+	public:
+		constexpr char const* operator()() const { return "enm"; }
+	};
+
+}//namespace bobl
+
+``` 
+so encode on tuple would work the same way as it does on fused structures:
+
+``` 
+  auto tuple = std::make_tuple(true, 100, std::string{ "the name" }, Enum::Two);
+  auto data = bobl::bson::encode(tuple);
+```
+BSON complete example: [named_tuple.cpp](https://github.com/serge-klim/bobl/blob/master/examples/bson/named_tuple.cpp)  
+CBOR complete example: [named_tuple.cpp](https://github.com/serge-klim/bobl/blob/master/examples/cbor/named_tuple.cpp)
 
 
 the library could handle more complicated  types, as such:
@@ -112,11 +159,6 @@ BOOST_FUSION_ADAPT_STRUCT(
 ```
 BSON complete example: [extended.cpp](https://github.com/serge-klim/bobl/blob/master/examples/bson/extended.cpp)  
 CBOR complete example: [extended.cpp](https://github.com/serge-klim/bobl/blob/master/examples/cbor/extended.cpp)
-
-#### What's missing:
-I'm planing to add at least following:
-* C++17 structured binding support
-* all stings are contains not processes utf-8 encoded string
 
 
 ### Requirements

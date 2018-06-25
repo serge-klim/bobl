@@ -99,6 +99,26 @@ void named_sequence_compiletime_test()
 	static_assert(bobl::utility::NamedSequence<std::tuple<diversion::variant<bobl::UseTypeName, int>>, bobl::options::None>::value, "seems bobl::utility::NamedSequence<std::tuple<variant<bobl::UseTypeName,...>>> doesn't work as expected");
 	static_assert(!bobl::utility::NamedSequence<std::tuple<diversion::variant<bobl::UseTypeName, int>, int>, bobl::options::None>::value, "seems bobl::utility::NamedSequence<std::tuple<variant<bobl::UseTypeName,...>>> doesn't work as expected");
 	static_assert(!bobl::utility::NamedSequence<std::tuple<diversion::variant<float, int>>, bobl::options::None>::value, "seems bobl::utility::NamedSequence<std::tuple<variant<bobl::UseTypeName,...>>> doesn't work as expected");
+
+
+	static_assert(!std::is_same<
+							typename bobl::utility::GetNameType<bobl::MemberName<SimpleTuple, typename std::tuple_element<0, SimpleTuple>::type, 0, bobl::options::None>>::type,
+							bobl::utility::ObjectNameIrrelevant
+					>::value, "name type is expected");	
+	static_assert(!std::is_same<
+							typename bobl::utility::GetNameType<bobl::MemberName<SimpleTuple, typename std::tuple_element<1, SimpleTuple>::type, 1, bobl::options::None>>::type,
+							bobl::utility::ObjectNameIrrelevant
+					>::value, "name type is expected");	
+	static_assert(!std::is_same<
+							typename bobl::utility::GetNameType<bobl::MemberName<SimpleTuple, typename std::tuple_element<2, SimpleTuple>::type, 2, bobl::options::None>>::type,
+							bobl::utility::ObjectNameIrrelevant
+					>::value, "name type is expected");	
+	static_assert(!std::is_same<
+							typename bobl::utility::GetNameType<bobl::MemberName<SimpleTuple, typename std::tuple_element<3, SimpleTuple>::type, 3, bobl::options::None>>::type,
+							bobl::utility::ObjectNameIrrelevant
+					>::value, "name type is expected");	
+
+	static_assert(bobl::utility::NamedSequence<SimpleTuple, bobl::options::None>::value, "not supposed to be named sequence");
 }
 
 BOOST_AUTO_TEST_CASE(MemberNameTest)
@@ -107,6 +127,23 @@ BOOST_AUTO_TEST_CASE(MemberNameTest)
 	using MemberName = typename bobl::utility::GetNameType<bobl::MemberName<Simple, TheEnum, 3, bobl::options::None>>::type;
 	BOOST_CHECK_EQUAL(MemberName{}.name(),"theEnum");
 	BOOST_CHECK(MemberName{}.compare(std::string{ "theEnum" }));
+
+	{
+		auto name = bobl::MemberName<SimpleTuple, typename std::tuple_element<0, SimpleTuple>::type, 0, bobl::options::None>{}();
+		BOOST_CHECK_EQUAL(std::string{ "enabled" }, std::string{ name });
+	}
+	{
+		auto name = bobl::MemberName<SimpleTuple, typename std::tuple_element<1, SimpleTuple>::type, 1, bobl::options::None>{}();
+		BOOST_CHECK_EQUAL(std::string{ "id" }, std::string{ name });
+	}
+	{
+		auto name = bobl::MemberName<SimpleTuple, typename std::tuple_element<2, SimpleTuple>::type, 2, bobl::options::None>{}();
+		BOOST_CHECK_EQUAL(std::string{ "name" }, std::string{ name });
+	}
+	{
+		auto name = bobl::MemberName<SimpleTuple, typename std::tuple_element<3, SimpleTuple>::type, 3, bobl::options::None>{}();
+		BOOST_CHECK_EQUAL(std::string{ "theEnum" }, std::string{ name });
+	}
 }
 
 

@@ -82,18 +82,18 @@ struct ObjectNameIrrelevant
 };
 
 
-template<typename T, typename = char const*>
+template<typename T, typename Overloaded = std::true_type>
 struct GetNameType
 {
 	using type = ObjectNameIrrelevant;
 };
 
 template<typename T>
-struct GetNameType<T, decltype(T{}()/*std::declval<T>()()*/)>
+struct GetNameType<T, typename std::is_constructible<std::string, decltype(T{}/*std::declval<T>()*/())>::type >
 {
 	struct TypeName
 	{
-		static /*constexpr*/ char const* name() { return T{}(); }
+		static /*constexpr*/ auto name() -> decltype(T{}/*std::declval<T>()*/()) { return T{}(); }
 		bool compare(diversion::string_view n) const { return n.compare(name()) == 0; }
 		bool compare(std::string const& n) const { return n.compare(name()) == 0; }
 	};

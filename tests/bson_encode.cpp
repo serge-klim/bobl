@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(EncodeToBufferTest)
 
 BOOST_AUTO_TEST_CASE(EncodeTupleTest)
 {
-	auto value = std::make_tuple(true, 100, std::string{ "the name" }, TheEnumClass::Two);
+	auto value = std::make_tuple(true, 100, std::string{ "the name" }, TheEnumClass::One, TheEnumClass::Two);
 	static_assert(!bobl::utility::NamedSequence<decltype(value), typename bobl::bson::EffectiveOptions<decltype(value), bobl::options::None>::type>::value, "not supposed to be named sequence");
 	static_assert(bobl::utility::NamedSequence<decltype(value), typename bobl::bson::EffectiveOptions<decltype(value), bobl::options::UsePositionAsName>::type>::value, "supposed to be named sequence");
 	auto data = bobl::bson::encode<bobl::options::UsePositionAsName>(value);
@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(EncodeTupleTest)
 	auto items = bobl::bson::make_iterator_range<NameValue>(doc);
 	auto n = std::distance(items.begin(), items.end());
 	BOOST_CHECK_EQUAL(n, decltype(n)(std::tuple_size<decltype(value)>::value));
-	BOOST_CHECK_EQUAL(n, 4);
+	BOOST_CHECK_EQUAL(n, 5);
 	auto i = items.begin();
 	BOOST_CHECK_EQUAL(i->name(), std::string{"_0"});
 	BOOST_CHECK_EQUAL(bobl::bson::cast<bool>(i->value()), true);
@@ -62,6 +62,10 @@ BOOST_AUTO_TEST_CASE(EncodeTupleTest)
 	BOOST_CHECK_EQUAL(bobl::bson::cast<std::string>(i->value()), std::string{ "the name" });
 	++i;
 	BOOST_CHECK_EQUAL(i->name(), std::string{ "_3" });
+	BOOST_CHECK_EQUAL(bobl::bson::cast<int>(i->value()), 1);
+	BOOST_CHECK(bobl::bson::cast<TheEnumClass>(i->value()) == TheEnumClass::One);
+	++i;
+	BOOST_CHECK_EQUAL(i->name(), std::string{ "_4" });
 	BOOST_CHECK_EQUAL(bobl::bson::cast<int>(i->value()), 2);
 	BOOST_CHECK(bobl::bson::cast<TheEnumClass>(i->value()) == TheEnumClass::Two);
 	{
@@ -73,8 +77,26 @@ BOOST_AUTO_TEST_CASE(EncodeTupleTest)
 		BOOST_CHECK_EQUAL(std::get<1>(res), std::get<1>(value));
 		BOOST_CHECK_EQUAL(std::get<2>(res), std::get<2>(value));
 		BOOST_CHECK(std::get<3>(res) == std::get<3>(value));
+		BOOST_CHECK(std::get<4>(res) == std::get<4>(value));
 	}
 }
+
+
+BOOST_AUTO_TEST_CASE(EncodeNamedTupleTest)
+{
+	auto value = std::make_tuple(true, 100, std::string{ "the name" }, TheEnumClass::Two);
+	static_assert(std::is_same<SimpleTuple, decltype(value)>::value, "these types supposed to be the same");
+	auto data = bobl::bson::encode(value);
+	auto begin = data.data();
+	auto end = begin + data.size();
+	auto simple = bobl::bson::decode<Simple>(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
+	BOOST_CHECK(simple.enabled);
+	BOOST_CHECK_EQUAL(simple.id, 100);
+	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
+	BOOST_CHECK_EQUAL(int(simple.theEnum), 2);
+}
+
 
 BOOST_AUTO_TEST_CASE(OrderedIntDictionaryTest)
 {
