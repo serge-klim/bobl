@@ -4,7 +4,8 @@
 #include <bobl/utility/flyweight.hpp>
 #include <bobl/utility/any.hpp>
 #include <stdexcept>
-	
+#include <cstdint>
+
 namespace bobl{ 
 
 //inline namespace v1{
@@ -56,6 +57,11 @@ using utility::Object;
 using utility::Array;
 
 }// namespace lite
+
+using Any = lite::Any<std::uint8_t const*>;
+using Array = lite::Array<std::uint8_t const*>;
+using Object = lite::Object<std::uint8_t const*>;
+
 
 template<typename T>
 class NameValue

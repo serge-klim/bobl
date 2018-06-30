@@ -4,7 +4,7 @@
 #include "bobl/utility/diversion.hpp"
 #include <boost/range/iterator_range.hpp>
 #include <vector>
-#include <cstdint>
+#include <type_traits>
 
 namespace bobl{ namespace flyweight { 
 	
@@ -17,36 +17,8 @@ enum class AnyTag
 	Object
 };
 
-template <AnyTag Tag>
-class AnyType
-{
-public:
-	template<typename Iterator>
-	AnyType(Iterator begin, Iterator end);
-	AnyType(std::string::const_iterator begin, std::string::const_iterator end);
-	AnyType(std::wstring::const_iterator begin, std::wstring::const_iterator end);
-private:
-	diversion::variant<
-		boost::iterator_range<std::uint8_t const*>,
-		boost::iterator_range<std::string::const_iterator>,
-		boost::iterator_range<std::wstring::const_iterator>,
-		std::vector<std::uint8_t>
-	> range_;
-};
+}//namespace utility
 
-using Any = AnyType<AnyTag::Any>;
-using Array = AnyType<AnyTag::Array>;
-using Object = AnyType<AnyTag::Object>;
-
-template<typename T> struct IsAnyType : std::false_type {};
-template<AnyTag Tag> struct IsAnyType<AnyType<Tag>> : std::true_type {};
-
-//template<typename T>
-//auto cbegin(T const& any) -> typename std::enable_if<IsAnyType<T>::value, typename T::iterator>::type { return any.range_.begin(); }
-//template<typename T>
-//auto cend(T const& any) -> typename std::enable_if<IsAnyType<T>::value, typename T::iterator>::type { return any.range_.end(); }
-
-}/*namespace utility*/
 
 namespace lite { namespace utility{
 
@@ -67,6 +39,12 @@ public:
 	using iterator = Iterator;
 	AnyType(boost::iterator_range<iterator>&& range) : range_{ std::move(range) } {}
 	AnyType(Iterator begin, Iterator end) : range_{ std::move(begin), std::move(end) } {}
+	template<typename T>
+	AnyType(typename std::enable_if<std::is_pointer<Iterator>::value && (sizeof(T) == sizeof(typename std::remove_pointer<Iterator>::type)), boost::iterator_range<T const*>>::type&& range) 
+		: range_{ std::move(range) } {}
+	template<typename T>
+	AnyType(typename std::enable_if<std::is_pointer<Iterator>::value && (sizeof(T) == sizeof(typename std::remove_pointer<Iterator>::type)), T const*>::type begin, T const* end) 
+		: range_{ reinterpret_cast<Iterator>(begin), reinterpret_cast<Iterator>(end) } {}
 private:
 	boost::iterator_range<Iterator> range_;
 };
@@ -97,10 +75,8 @@ namespace details {
 template<typename Iterator, bobl::flyweight::utility::AnyTag Tag> Iterator begin_raw(bobl::flyweight::lite::utility::AnyType<Iterator, Tag> const& any) { return any.range_.begin(); }
 template<typename Iterator, bobl::flyweight::utility::AnyTag Tag> Iterator end_raw(bobl::flyweight::lite::utility::AnyType<Iterator, Tag> const& any) { return any.range_.end(); }
 
-}//namespace details
+} /*namespace details*/
 
-} /*namespace lite*/ }/*namespace utility*/
-
-} /*namespace flyweight*/ } /*namespace bobl*/
+} /*namespace lite*/ }/*namespace utility*/ } /*namespace flyweight*/ } /*namespace bobl*/
 
 

@@ -32,7 +32,8 @@ BOOST_AUTO_TEST_CASE(RawTest)
 	auto o = bobl::bson::flyweight::NameValue<bool, bobl::options::None>::decode(begin, end);
 	BOOST_CHECK_EQUAL(o.name(), std::string{ "id" });
 	BOOST_CHECK(o.value());
-	auto any = bobl::bson::flyweight::NameValue<bobl::flyweight::lite::Any<decltype(begin)>, bobl::options::None>::decode(begin, end);
+	//auto any = bobl::bson::flyweight::NameValue<bobl::flyweight::lite::Any<decltype(begin)>, bobl::options::None>::decode(begin, end);
+	auto any = bobl::bson::flyweight::NameValue<bobl::flyweight::Any, bobl::options::None>::decode(begin, end);
 	BOOST_CHECK_EQUAL(any.name(), std::string{ "name" });
 	BOOST_CHECK_EQUAL(*begin, 0);
 	BOOST_CHECK_EQUAL(++begin, end);
