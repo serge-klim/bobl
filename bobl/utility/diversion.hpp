@@ -24,9 +24,13 @@ namespace diversion { using std::optional; using std::make_optional; using std::
 
 #if defined(BOBL_PREFER_BOOST_VARIANT__) || !defined(__cpp_lib_variant)
 #include <boost/variant.hpp>
-namespace diversion { using boost::variant; using boost::apply_visitor; }
+namespace diversion { 
+using boost::variant; 
+//using boost::apply_visitor; 
+template<typename ...Args> auto visit(Args&& ...args) -> decltype(boost::apply_visitor(std::forward<Args>(args)...)) { return boost::apply_visitor(std::forward<Args>(args)...); }
+}
 #else
-namespace diversion { using std::variant; using std::make_optional; using std::nullopt; }
+namespace diversion { using std::variant; using std::visit }
 #endif
 
 namespace diversion {

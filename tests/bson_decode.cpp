@@ -168,7 +168,7 @@ BOOST_AUTO_TEST_CASE(VariantTest)
 	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
 	auto doc = bobl::bson::flyweight::Document::decode(begin, end);
 	auto res = bobl::bson::cast<diversion::variant<bool, std::uint64_t, std::string, int>>(doc);
-	BOOST_CHECK(diversion::apply_visitor(CheckValueVisitor<int>{1}, res));
+	BOOST_CHECK(diversion::visit(CheckValueVisitor<int>{1}, res));
 	BOOST_CHECK_EQUAL(begin, end);
 }
 

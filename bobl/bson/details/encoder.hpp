@@ -220,7 +220,7 @@ public:
 	template<typename Iterator>
 	static Iterator encode(Iterator out, diversion::string_view name, diversion::variant<Types...> const& value)
 	{
-		return diversion::apply_visitor(ValueVisitor<Iterator>{ std::move(out), std::move(name) }, value);
+		return diversion::visit(ValueVisitor<Iterator>{ std::move(out), std::move(name) }, value);
 	}
 };
 
@@ -251,7 +251,7 @@ public:
 	template<typename Iterator>
 	static Iterator encode(Iterator out, diversion::variant<bobl::UseTypeName, Types...> const& value)
 	{
-		return diversion::apply_visitor(ValueVisitor<Iterator>{ std::move(out) }, value);
+		return diversion::visit(ValueVisitor<Iterator>{ std::move(out) }, value);
 	}
 	template<typename Iterator>
 	static Iterator encode(Iterator out, diversion::string_view /*name*/, diversion::variant<bobl::UseTypeName, Types...> const& value)

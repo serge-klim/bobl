@@ -142,8 +142,8 @@ class NameValue<diversion::variant<bobl::UseTypeName, Types...>, Options>
 	};
 	NameValue(ValueHandler&& handler) :handler_{ std::move(handler) } {}
 public:
-	diversion::string_view name() const { return diversion::apply_visitor(NameVisitor{}, handler_);}
-	Value value() const { return diversion::apply_visitor(ValueVisitor{}, handler_); }
+	diversion::string_view name() const { return diversion::visit(NameVisitor{}, handler_);}
+	Value value() const { return diversion::visit(ValueVisitor{}, handler_); }
 	template<typename NameType>
 	static NameValue decode(bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end, NameType const& /*ename*/);
 private:

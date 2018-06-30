@@ -357,8 +357,8 @@ class ValueHandler<diversion::variant<Params...>, Options, boost::mpl::true_>
 
 	ValueHandler(NestedValueHandler&& nested) : nested_{ std::move(nested) } {}
 public:
-	diversion::string_view name() const { return diversion::apply_visitor(NameVisitor{}, nested_); }
-	ValueType operator()() const {	return diversion::apply_visitor(ValueVisitor{}, nested_);	}
+	diversion::string_view name() const { return diversion::visit(NameVisitor{}, nested_); }
+	ValueType operator()() const {	return diversion::visit(ValueVisitor{}, nested_);	}
 	static ValueHandler decode(ObjectHeader&& header, bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end)
 	{
 		if (begin == end)
