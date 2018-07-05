@@ -2,12 +2,13 @@
 
 #pragma once
 #include "bobl/cbor/details/utility.hpp"
-#include "bobl/cbor/options.hpp"
+#include "bobl/cbor/details/options.hpp"
 #include "bobl/cbor/adapter.hpp"
 #include "bobl/cbor/cbor.hpp"
 #include "bobl/utility/timepoint.hpp"
 #include "bobl/utility/options.hpp"
 #include "bobl/utility/float.hpp"
+#include "bobl/utility/parameters.hpp"
 #include "bobl/utility/adapter.hpp"
 #include "bobl/utility/names.hpp"
 #include "bobl/utility/diversion.hpp"
@@ -165,7 +166,33 @@ inline Iterator encode(Iterator out, T const& value)
 }
 
 template<typename T, typename Options>
-class Handler<T, Options, typename boost::mpl::and_<boost::fusion::traits::is_sequence<T>, bobl::utility::NamedSequence<T, typename bobl::cbor::EffectiveOptions<T, Options>::type>>::type>
+class Handler<T, Options, typename boost::mpl::and_<boost::fusion::traits::is_sequence<T>, bobl::utility::IsHeterogeneousArraySequence<bobl::cbor::NsTag, T, Options>>::type>
+{
+public:
+	template<typename Iterator>
+	static Iterator encode(Iterator out, T const& sequence)
+	{
+		out = bobl::cbor::utility::encode::unsigned_int(out, bobl::cbor::MajorType::Array, std::size_t(boost::fusion::result_of::size<T>::value));
+		return encode<0>(out, sequence);
+	}
+private:
+	template<std::size_t N, typename U, typename Iterator>
+	static typename std::enable_if<boost::fusion::result_of::size<U>::value != N, Iterator>::type encode(Iterator out, U const& sequence)
+	{
+		using Type = typename boost::fusion::result_of::value_at_c<U, N>::type;
+		out = details::encode<Options, Iterator, Type>(out, boost::fusion::at_c<N>(sequence));
+		return encode<N + 1>(std::move(out), sequence);
+	}
+
+	template<std::size_t N, typename U, typename Iterator>
+	static typename std::enable_if<boost::fusion::result_of::size<U>::value == N, Iterator>::type encode(Iterator out, U const& /*sequence*/) { return out; }
+};
+
+
+template<typename T, typename Options>
+class Handler<T, Options, typename boost::mpl::and_<boost::fusion::traits::is_sequence<T>,
+														bobl::utility::IsObjectSequence<bobl::cbor::NsTag, T, Options>, 
+														bobl::utility::NamedSequence<T, typename bobl::cbor::EffectiveOptions<T, Options>::type>>::type>
 {
 public:
 	template<typename Iterator>
@@ -199,7 +226,6 @@ private:
 	{
 		return details::encode<Options, Iterator, diversion::variant<bobl::UseTypeName, Types...>>(out, value);
 	}
-
 };
 
 template<typename T, typename Options>

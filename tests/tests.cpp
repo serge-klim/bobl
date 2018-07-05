@@ -80,6 +80,9 @@ void decode_parameters_compiletime_test()
 	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::cbor::NsTag, int, float, bobl::Options<bobl::options::StructAsDictionary>>::Options, bobl::Options<bobl::options::StructAsDictionary>>::value, "seems bobl::utility::DecodeParameters is broken");
 
 
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::cbor::NsTag, std::vector<int>>::Parameters, std::tuple<std::vector<int>>>::value, "seems bobl::utility::DecodeParameters is broken");
+
+
 	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::bson::NsTag, int>::Parameters, std::tuple<int>>::value, "seems bobl::utility::DecodeParameters is broken");
 	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::bson::NsTag, int>::Options, bobl::options::None>::value, "seems bobl::utility::DecodeParameters is broken");
 

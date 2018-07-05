@@ -161,6 +161,33 @@ BOOST_AUTO_TEST_CASE(ArrayOfSimpleTest)
 	BOOST_CHECK_EQUAL(int(res[2].theEnum), 2);
 }
 
+BOOST_AUTO_TEST_CASE(TupleAsIntArrayTest)
+{
+	auto value = std::make_tuple(0, 1, 2, 101);
+	using ArrayType = decltype(value);
+	auto data = bobl::cbor::encode<bobl::options::NonUniformArray<ArrayType>>(value);
+
+	uint8_t const* begin = data.data();
+	uint8_t const* end = begin + data.size();
+	auto res = bobl::cbor::decode<std::vector<int>>(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
+	BOOST_CHECK_EQUAL(res.size(), 4);
+	BOOST_CHECK_EQUAL(res[0], 0);
+	BOOST_CHECK_EQUAL(res[1], 1);
+	BOOST_CHECK_EQUAL(res[2], 2);
+	BOOST_CHECK_EQUAL(res[3], 101);
+	{
+		uint8_t const* begin = data.data();
+		uint8_t const* end = begin + data.size();
+		auto res = bobl::cbor::decode<ArrayType, bobl::Options<bobl::options::NonUniformArray<ArrayType>>>(begin, end);
+		BOOST_CHECK_EQUAL(begin, end);
+		BOOST_CHECK_EQUAL(std::get<0>(res), 0);
+		BOOST_CHECK_EQUAL(std::get<1>(res), 1);
+		BOOST_CHECK_EQUAL(std::get<2>(res), 2);
+		BOOST_CHECK_EQUAL(std::get<3>(res), 101);
+	}
+}
+
 BOOST_AUTO_TEST_CASE(WrappedEmptyArrayOfSimpleTest)
 {
 	auto value = Vector<Simple>{};
