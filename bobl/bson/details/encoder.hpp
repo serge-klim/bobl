@@ -224,7 +224,6 @@ public:
 	}
 };
 
-
 template<typename ...Types, typename Options>
 class Handler<diversion::variant<bobl::UseTypeName, Types...>, Options, boost::mpl::true_>
 {
@@ -260,7 +259,6 @@ public:
 	}
 };
 
-
 template<typename T, typename Options>
 class Handler<bobl::bson::Adapter<T>, Options, boost::mpl::true_>
 {
@@ -275,8 +273,11 @@ public:
 
 
 template<typename T,typename Options>
-class Handler<T, Options, typename boost::mpl::and_<boost::fusion::traits::is_sequence<T>, bobl::utility::NamedSequence<T, typename bobl::bson::EffectiveOptions<T, Options>::type>>::type>
+class Handler<T, Options, typename boost::fusion::traits::is_sequence<T>::type>
 {
+	using HeterogeneousArray = bobl::utility::IsHeterogeneousArraySequence<bobl::bson::NsTag, T, Options>;
+	static_assert(boost::mpl::or_<HeterogeneousArray, bobl::utility::NamedSequence<T, typename bobl::bson::EffectiveOptions<T, Options>::type>>::value ,
+									"can't encode unnamed sequence as BSON object");
 public:
 	static void encode(std::vector<std::uint8_t>& buffer, T const& sequence)
 	{
@@ -298,17 +299,31 @@ public:
 	template<typename Iterator>
 	static Iterator encode(Iterator out, diversion::string_view name, T const& sequence)
 	{
-		Handler<Header, Options>::encode(out, std::make_pair(bobl::bson::EmbeddedDocument, std::move(name)));
+		using BsonType = typename std::conditional<HeterogeneousArray::value, std::integral_constant<bobl::bson::Type, bobl::bson::Array>, std::integral_constant<bobl::bson::Type, bobl::bson::EmbeddedDocument>>::type;
+		Handler<Header, Options>::encode(out, std::make_pair(BsonType::value, std::move(name)));
 		return encode(out, sequence);
 	}
 private:
+	template<std::size_t N, typename U>
+	static auto name() -> typename std::enable_if<HeterogeneousArray::value, decltype(diversion::to_string(N))>::type
+	{
+		return diversion::to_string(N);
+	}
+
+	template<std::size_t N, typename U>
+	static auto name()
+		-> typename std::enable_if<!HeterogeneousArray::value, decltype(bobl::utility::GetNameType<bobl::MemberName<T, U, N, typename bobl::bson::EffectiveOptions<T, Options>::type>>::type::name())>::type
+	{
+		using MemberName = typename bobl::utility::GetNameType<bobl::MemberName<T, U, N, typename bobl::bson::EffectiveOptions<T, Options>::type>>::type;
+		return MemberName::name();
+	}
+
 	template<std::size_t N, typename U, typename Iterator>
 	static typename std::enable_if<boost::fusion::result_of::size<U>::value != N, Iterator>::type encode(Iterator out, U const& sequence)
 	{
 		using Type = typename boost::fusion::result_of::value_at_c<U, N>::type;
-		using MemberName = typename bobl::utility::GetNameType<bobl::MemberName<U, Type, N, typename bobl::bson::EffectiveOptions<T, Options>::type>>::type;
-		auto const& name = MemberName::name();
-		out = details::encode<Options, Iterator, Type>(out, diversion::string_view{ name }, boost::fusion::at_c<N>(sequence));
+		auto const& n = name<N, Type>();
+		out = details::encode<Options, Iterator, Type>(out, diversion::string_view{ n }, boost::fusion::at_c<N>(sequence));
 		return encode<N + 1>(std::move(out), sequence);
 	}
 

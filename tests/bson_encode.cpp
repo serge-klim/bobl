@@ -153,9 +153,11 @@ BOOST_AUTO_TEST_CASE(WrappeedArrayOfSimpleTest)
 	auto data = bobl::bson::encode(value);
 	uint8_t const* begin = data.data();
 	uint8_t const* end = begin + data.size();
-	auto doc = bobl::bson::flyweight::Document::decode(begin, end);
+	auto res = bobl::bson::decode<Vector<Simple>, bobl::Options<bobl::options::RelaxedIntegers>>(begin, end);
 	BOOST_CHECK_EQUAL(begin, end);
-	auto res = bobl::bson::cast<Vector<Simple>, bobl::Options<bobl::options::RelaxedIntegers>>(doc);
+	//auto doc = bobl::bson::flyweight::Document::decode(begin, end);
+	//BOOST_CHECK_EQUAL(begin, end);
+	//auto res = bobl::bson::cast<Vector<Simple>, bobl::Options<bobl::options::RelaxedIntegers>>(doc);
 	BOOST_CHECK_EQUAL(res.vector.size(), 3);
 	BOOST_CHECK(res.vector[0].enabled);
 	BOOST_CHECK_EQUAL(res.vector[0].id, 100);
@@ -170,6 +172,40 @@ BOOST_AUTO_TEST_CASE(WrappeedArrayOfSimpleTest)
 	BOOST_CHECK_EQUAL(res.vector[2].name, std::string{ "second" });
 	BOOST_CHECK_EQUAL(int(res.vector[2].theEnum), 2);
 }
+
+BOOST_AUTO_TEST_CASE(TupleAsIntArrayTest)
+{
+	auto value = std::make_tuple(0, 1, 2, 101);
+	using ArrayType = decltype(value);
+	auto data = bobl::bson::encode<bobl::options::UsePositionAsName, bobl::options::NonUniformArray<ArrayType>>(std::make_tuple(value));
+
+	uint8_t const* begin = data.data();
+	uint8_t const* end = begin + data.size();
+	auto doc = bobl::bson::flyweight::Document::decode(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
+	auto res = bobl::bson::cast<ArrayType, bobl::Options<bobl::options::NonUniformArray<ArrayType>>>(doc);
+	BOOST_CHECK_EQUAL(begin, end);
+	BOOST_CHECK_EQUAL(std::get<0>(res), 0);
+	BOOST_CHECK_EQUAL(std::get<1>(res), 1);
+	BOOST_CHECK_EQUAL(std::get<2>(res), 2);
+	BOOST_CHECK_EQUAL(std::get<3>(res), 101);
+	auto v = bobl::bson::cast<std::vector<int>>(doc);
+	BOOST_CHECK_EQUAL(v[0], 0);
+	BOOST_CHECK_EQUAL(v[1], 1);
+	BOOST_CHECK_EQUAL(v[2], 2);
+	BOOST_CHECK_EQUAL(v[3], 101);
+
+	using NameValue = bobl::flyweight::NameValue<std::vector<int>>;
+	auto items = bobl::bson::make_iterator_range<NameValue>(doc);
+	auto n = std::distance(items.begin(), items.end());
+	BOOST_CHECK_EQUAL(n, 1);
+	auto i = items.begin();
+	BOOST_CHECK_EQUAL(i->value()[0], 0);
+	BOOST_CHECK_EQUAL(i->value()[1], 1);
+	BOOST_CHECK_EQUAL(i->value()[2], 2);
+	BOOST_CHECK_EQUAL(i->value()[3], 101);
+}
+
 
 BOOST_AUTO_TEST_CASE(EmptyOptionalStructTest)
 {
