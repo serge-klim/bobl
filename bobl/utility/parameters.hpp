@@ -30,12 +30,21 @@ public:
 	using Options = typename std::conditional< bobl::utility::IsOptions<Last>::value, Last, bobl::options::None>::type;
 };
 
-template<typename ...Args>
+template<typename NsTag, typename T, typename ...Options>
+using IsHeterogeneousArraySequence = bobl::utility::options::Contains<typename bobl::EffectiveOptions<NsTag, T, Options...>::type, bobl::options::HeterogeneousArray<T>>;
+
+template<typename NsTag, typename T, typename ...Options>
+using IsObjectSequence = boost::mpl::not_<IsHeterogeneousArraySequence<NsTag, T, Options...>>;
+
+template<typename NsTag, typename ...Args>
 struct DecodeParameters
 {
 	using Options = typename CastParameters<Args...>::Options;
 	using Result = typename CastParameters<Args...>::Result;
-	using Parameters = typename std::conditional< boost::fusion::traits::is_sequence<Result>::value, Result, std::tuple<Result>>::type;
+	using Parameters = typename std::conditional< boost::mpl::and_<boost::fusion::traits::is_sequence<Result>, 
+																		IsObjectSequence<NsTag, Result, Options>
+													>::value,
+													Result, std::tuple<Result>>::type;
 	static auto result(std::tuple<Result>&& res) -> decltype(std::get<0>(std::move(res))) { return std::get<0>(std::move(res)); }
 	template<typename T>
 	static T&& result(T&& res) { return std::forward<T>(res); }

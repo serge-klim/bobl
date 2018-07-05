@@ -2,6 +2,9 @@
 
 #include "tests.hpp"
 //#include "bobl/any.hpp"
+#include "bobl/bson/details/options.hpp"
+#include "bobl/cbor/details/options.hpp"
+#include "bobl/json/details/options.hpp"
 #include "bobl/utility/adapter.hpp"
 #include "bobl/adapter.hpp"
 #include "bobl/utility/parameters.hpp"
@@ -53,28 +56,53 @@ BOOST_AUTO_TEST_CASE(OptionsCompileTimeTest)
 
 void decode_parameters_compiletime_test()
 {
-	static_assert(std::is_same<typename bobl::utility::DecodeParameters<int>::Parameters, std::tuple<int>>::value, "seems bobl::utility::DecodeParameters is broken");
-	static_assert(std::is_same<typename bobl::utility::DecodeParameters<int>::Options, bobl::options::None>::value, "seems bobl::utility::DecodeParameters is broken");
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::cbor::NsTag, int>::Parameters, std::tuple<int>>::value, "seems bobl::utility::DecodeParameters is broken");
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::cbor::NsTag, int>::Options, bobl::options::None>::value, "seems bobl::utility::DecodeParameters is broken");
 
-	static_assert(std::is_same<typename bobl::utility::DecodeParameters<int, bobl::Options<bobl::options::StructAsDictionary>>::Parameters, std::tuple<int>>::value, "seems bobl::utility::DecodeParameters is broken");
-	static_assert(std::is_same<typename bobl::utility::DecodeParameters<int, bobl::Options<bobl::options::StructAsDictionary>>::Options, bobl::Options<bobl::options::StructAsDictionary>>::value, "seems bobl::utility::DecodeParameters is broken");
-
-
-	static_assert(std::is_same<typename bobl::utility::DecodeParameters<std::tuple<int>>::Parameters, std::tuple<int>>::value, "seems bobl::utility::DecodeParameters is broken");
-	static_assert(std::is_same<typename bobl::utility::DecodeParameters<std::tuple<int>>::Options, bobl::options::None>::value, "seems bobl::utility::DecodeParameters is broken");
-
-	static_assert(std::is_same<typename bobl::utility::DecodeParameters<int, bobl::options::None>::Parameters, std::tuple<int>>::value, "seems bobl::utility::DecodeParameters is broken");
-	static_assert(std::is_same<typename bobl::utility::DecodeParameters<int, bobl::options::None>::Options, bobl::options::None>::value, "seems bobl::utility::DecodeParameters is broken");
-
-	static_assert(std::is_same<typename bobl::utility::DecodeParameters<std::tuple<int>, bobl::options::None>::Parameters, std::tuple<int>>::value, "seems bobl::utility::DecodeParameters is broken");
-	static_assert(std::is_same<typename bobl::utility::DecodeParameters<std::tuple<int>, bobl::options::None>::Options, bobl::options::None>::value, "seems bobl::utility::DecodeParameters is broken");
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::cbor::NsTag, int, bobl::Options<bobl::options::StructAsDictionary>>::Parameters, std::tuple<int>>::value, "seems bobl::utility::DecodeParameters is broken");
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::cbor::NsTag, int, bobl::Options<bobl::options::StructAsDictionary>>::Options, bobl::Options<bobl::options::StructAsDictionary>>::value, "seems bobl::utility::DecodeParameters is broken");
 
 
-	static_assert(std::is_same<typename bobl::utility::DecodeParameters<int, float>::Parameters, std::tuple<int, float>>::value, "seems bobl::utility::DecodeParameters is broken");
-	static_assert(std::is_same<typename bobl::utility::DecodeParameters<int, float>::Options, bobl::options::None>::value, "seems bobl::utility::DecodeParameters is broken");
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::cbor::NsTag, std::tuple<int>>::Parameters, std::tuple<int>>::value, "seems bobl::utility::DecodeParameters is broken");
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::cbor::NsTag, std::tuple<int>>::Options, bobl::options::None>::value, "seems bobl::utility::DecodeParameters is broken");
 
-	static_assert(std::is_same<typename bobl::utility::DecodeParameters<int, float, bobl::Options<bobl::options::StructAsDictionary>>::Parameters, std::tuple<int, float>>::value, "seems bobl::utility::DecodeParameters is broken");
-	static_assert(std::is_same<typename bobl::utility::DecodeParameters<int, float, bobl::Options<bobl::options::StructAsDictionary>>::Options, bobl::Options<bobl::options::StructAsDictionary>>::value, "seems bobl::utility::DecodeParameters is broken");
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::cbor::NsTag, int, bobl::options::None>::Parameters, std::tuple<int>>::value, "seems bobl::utility::DecodeParameters is broken");
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::cbor::NsTag, int, bobl::options::None>::Options, bobl::options::None>::value, "seems bobl::utility::DecodeParameters is broken");
+
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::cbor::NsTag, std::tuple<int>, bobl::options::None>::Parameters, std::tuple<int>>::value, "seems bobl::utility::DecodeParameters is broken");
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::cbor::NsTag, std::tuple<int>, bobl::options::None>::Options, bobl::options::None>::value, "seems bobl::utility::DecodeParameters is broken");
+
+
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::cbor::NsTag, int, float>::Parameters, std::tuple<int, float>>::value, "seems bobl::utility::DecodeParameters is broken");
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::cbor::NsTag, int, float>::Options, bobl::options::None>::value, "seems bobl::utility::DecodeParameters is broken");
+
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::cbor::NsTag, int, float, bobl::Options<bobl::options::StructAsDictionary>>::Parameters, std::tuple<int, float>>::value, "seems bobl::utility::DecodeParameters is broken");
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::cbor::NsTag, int, float, bobl::Options<bobl::options::StructAsDictionary>>::Options, bobl::Options<bobl::options::StructAsDictionary>>::value, "seems bobl::utility::DecodeParameters is broken");
+
+
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::bson::NsTag, int>::Parameters, std::tuple<int>>::value, "seems bobl::utility::DecodeParameters is broken");
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::bson::NsTag, int>::Options, bobl::options::None>::value, "seems bobl::utility::DecodeParameters is broken");
+
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::bson::NsTag, int, bobl::Options<bobl::options::StructAsDictionary>>::Parameters, std::tuple<int>>::value, "seems bobl::utility::DecodeParameters is broken");
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::bson::NsTag, int, bobl::Options<bobl::options::StructAsDictionary>>::Options, bobl::Options<bobl::options::StructAsDictionary>>::value, "seems bobl::utility::DecodeParameters is broken");
+
+
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::bson::NsTag, std::tuple<int>>::Parameters, std::tuple<int>>::value, "seems bobl::utility::DecodeParameters is broken");
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::bson::NsTag, std::tuple<int>>::Options, bobl::options::None>::value, "seems bobl::utility::DecodeParameters is broken");
+
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::bson::NsTag, int, bobl::options::None>::Parameters, std::tuple<int>>::value, "seems bobl::utility::DecodeParameters is broken");
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::bson::NsTag, int, bobl::options::None>::Options, bobl::options::None>::value, "seems bobl::utility::DecodeParameters is broken");
+
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::bson::NsTag, std::tuple<int>, bobl::options::None>::Parameters, std::tuple<int>>::value, "seems bobl::utility::DecodeParameters is broken");
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::bson::NsTag, std::tuple<int>, bobl::options::None>::Options, bobl::options::None>::value, "seems bobl::utility::DecodeParameters is broken");
+
+
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::bson::NsTag, int, float>::Parameters, std::tuple<int, float>>::value, "seems bobl::utility::DecodeParameters is broken");
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::bson::NsTag, int, float>::Options, bobl::options::None>::value, "seems bobl::utility::DecodeParameters is broken");
+
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::bson::NsTag, int, float, bobl::Options<bobl::options::StructAsDictionary>>::Parameters, std::tuple<int, float>>::value, "seems bobl::utility::DecodeParameters is broken");
+	static_assert(std::is_same<typename bobl::utility::DecodeParameters<bobl::bson::NsTag, int, float, bobl::Options<bobl::options::StructAsDictionary>>::Options, bobl::Options<bobl::options::StructAsDictionary>>::value, "seems bobl::utility::DecodeParameters is broken");
+
 }
 
 

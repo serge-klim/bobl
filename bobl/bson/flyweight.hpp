@@ -3,6 +3,7 @@
 #pragma once
 #include "bobl/bson/details/value.hpp"
 #include "bobl/bson/details/header.hpp"
+#include "bobl/bson/details/options.hpp"
 #include "bobl/bson/adapter.hpp"
 #include "bobl/options.hpp"
 #include "bobl/utility/any.hpp"
@@ -158,7 +159,7 @@ private:
 } /*namespace flyweight*/ 
 
 template<typename ...Args>
-auto cast(flyweight::Document const& document) -> typename bobl::utility::DecodeParameters<Args...>::Result;
+auto cast(flyweight::Document const& document) -> typename bobl::utility::DecodeParameters<bobl::bson::NsTag, Args...>::Result;
 
  }/*namespace bson*/ } /*namespace bobl*/
 
@@ -183,12 +184,12 @@ bobl::bson::flyweight::Document bobl::bson::flyweight::Document::decode(Iterator
 }
 
 template<typename ...Args>
-auto bobl::bson::cast(bobl::bson::flyweight::Document const& document) -> typename bobl::utility::DecodeParameters<Args...>::Result
+auto bobl::bson::cast(bobl::bson::flyweight::Document const& document) -> typename bobl::utility::DecodeParameters<bobl::bson::NsTag, Args...>::Result
 {
-	using Parameters = bobl::utility::DecodeParameters<Args...>;
+	using Parameters = bobl::utility::DecodeParameters<bobl::bson::NsTag, Args...>;
 	auto const& value = document.value();
 	auto begin = value.begin();
-	return Parameters::result(bobl::bson::flyweight::details::SequenceHandler<typename Parameters::Parameters, typename Parameters::Options>::decode(begin,value.end()) );
+	return Parameters::result(bobl::bson::flyweight::details::SequenceHandler<typename Parameters::Parameters, false, typename Parameters::Options>::decode(begin,value.end()) );
 }
 
 

@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "bobl/bson/flyweight.hpp"
+#include "bobl/bson/details/options.hpp"
 #include "bobl/bson/details/header.hpp"
+#include "bobl/bson/flyweight.hpp"
 #include "bobl/bson/bson.hpp"
 #include "bobl/utility/any.hpp"
 #include "bobl/bobl.hpp"
@@ -64,7 +65,7 @@ bobl::Type type(bobl::flyweight::lite::Any<Iterator> const& any)
 }
 
 template<typename ...Args, typename Iterator>
-auto decode(Iterator& begin, Iterator end) -> typename bobl::utility::DecodeParameters<Args...>::Result
+auto decode(Iterator& begin, Iterator end) -> typename bobl::utility::DecodeParameters<bobl::bson::NsTag, Args...>::Result
 {
 	auto doc = bobl::bson::flyweight::Document::decode(begin, end);
 	return cast<Args...>(doc);

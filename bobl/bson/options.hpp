@@ -2,6 +2,7 @@
 
 #pragma once
 #include "bobl/options.hpp"
+
 namespace bobl{ namespace bson {
 
 template<typename T, typename ...Options>

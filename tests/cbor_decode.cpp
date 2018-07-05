@@ -141,6 +141,23 @@ BOOST_AUTO_TEST_CASE(IntArrayAsAnyArrayTest)
 	BOOST_CHECK_EQUAL(bobl::cbor::cast<int>(res[3]), 101);
 }
 
+BOOST_AUTO_TEST_CASE(IntArrayAsTupleTest)
+{
+	//{'array': [0, 1, 2, 101]}
+	//(13) : b'\xa1earray\x84\x00\x01\x02\x18e'
+	std::uint8_t data[] = { /*0xa1, 0x65, 0x61, 0x72, 0x72, 0x61, 0x79,*/ 0x84, 0x0, 0x1, 0x2, 0x18, 0x65 };
+
+	uint8_t const* begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	using ArrayType = std::tuple<int, int, int, int>;
+	auto res = bobl::cbor::decode<ArrayType, bobl::Options<bobl::options::NonUniformArray<ArrayType>>>(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
+	BOOST_CHECK_EQUAL(std::get<0>(res), 0);
+	BOOST_CHECK_EQUAL(std::get<1>(res), 1);
+	BOOST_CHECK_EQUAL(std::get<2>(res), 2);
+	BOOST_CHECK_EQUAL(std::get<3>(res), 101);
+}
+
 BOOST_AUTO_TEST_CASE(FloatArrayTest)
 {
 	//{'array': [0.1, 5555.77777, 2.1, 101.1234567]}

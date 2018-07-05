@@ -3,8 +3,10 @@
 #pragma once
 #include "bobl/bson/details/sequence.hpp"
 #include "bobl/bson/details/numeric.hpp"
+#include "bobl/bson/details/options.hpp"
 #include "bobl/bson/adapter.hpp"
 #include "bobl/bson/details/header.hpp"
+#include "bobl/utility/parameters.hpp"
 #include "bobl/utility/options.hpp"
 #include "bobl/utility/float.hpp"
 #include "bobl/utility/has_is.hpp"
@@ -279,26 +281,28 @@ public:
 
 
  template<typename T, typename Options>
- class ValueHandler<T, Options, typename boost::mpl::and_<typename boost::fusion::traits::is_sequence<T>::type,
-										boost::mpl::not_<bobl::utility::options::Contains<typename bobl::bson::EffectiveOptions<T, Options>::type, bobl::options::NonUniformArray>>>::type
-										> : EmbeddedDocument
+ class ValueHandler<T, Options, typename boost::fusion::traits::is_sequence<T>::type> : EmbeddedDocument
  {
-	 static constexpr bobl::bson::Type BsonType = bobl::bson::EmbeddedDocument;
+	 using HeterogeneousArray = bobl::utility::IsHeterogeneousArraySequence<bobl::bson::NsTag, T, Options>;
+	 using BsonType = typename std::conditional<HeterogeneousArray::value,
+												std::integral_constant<bobl::bson::Type, bobl::bson::Array>,
+												std::integral_constant<bobl::bson::Type, bobl::bson::EmbeddedDocument>>::type;
+
 	 using EmbeddedDocument::EmbeddedDocument;
  public:
 	 using EmbeddedDocument::name;
 	 T operator()() const
 	 {
 		 auto const& val = value();
-		 return SequenceHandler<T, typename bobl::bson::EffectiveOptions<T, Options>::type>::decode(val.begin(), val.end());
+		 return SequenceHandler<T, HeterogeneousArray::value, typename bobl::bson::EffectiveOptions<T, Options>::type>::decode(val.begin(), val.end());
 	 }
 
 	 static ValueHandler decode(ObjectHeader&& header, bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end)
 	 {
-		 begin = header.validate<BsonType>(end);
+		 begin = header.validate<BsonType::value>(end);
 		 return ValueHandler(std::move(header));
 	 }
-	 //	static bool is(details::ObjectHeader const& header) { return header.type() == BsonType; }
+	 //	static bool is(details::ObjectHeader const& header) { return header.type() == BsonType::value; }
  };
 
  

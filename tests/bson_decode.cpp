@@ -240,6 +240,29 @@ BOOST_AUTO_TEST_CASE(IntArrayAsAnyArrayTest)
 	BOOST_CHECK_EQUAL(begin, end);
 }
 
+BOOST_AUTO_TEST_CASE(IntArrayAsTupleTest) 
+{
+	//////////BSON////////////
+	//{'array': [0, 1, 2, 101]}
+	//(45) :
+	//b'-\x00\x00\x00\x04array\x00!\x00\x00\x00\x100\x00\x00\x00\x00\x00\x101\x00\x01\x00\x00\x00\x102\x00\x02\x00\x00\x00\x103\x00e\x00\x00\x00\x00\x00'
+	std::uint8_t data[] = {0x2d, 0x0,  0x0,  0x0,  0x4,  0x61, 0x72, 0x72, 0x61,
+							0x79, 0x0,  0x21, 0x0,  0x0,  0x0,  0x10, 0x30, 0x0,
+							0x0,  0x0,  0x0,  0x0,  0x10, 0x31, 0x0,  0x1,  0x0,
+							0x0,  0x0,  0x10, 0x32, 0x0,  0x2,  0x0,  0x0,  0x0,
+							0x10, 0x33, 0x0,  0x65, 0x0,  0x0,  0x0,  0x0,  0x0};
+
+	uint8_t const *begin = data;
+	uint8_t const *end = begin + sizeof(data) / sizeof(data[0]);
+	using ArrayType = std::tuple<int, int, int, int>;
+	auto res = bobl::bson::decode<ArrayType, bobl::Options<bobl::options::NonUniformArray<ArrayType>>>(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
+	BOOST_CHECK_EQUAL(std::get<0>(res), 0);
+	BOOST_CHECK_EQUAL(std::get<1>(res), 1);
+	BOOST_CHECK_EQUAL(std::get<2>(res), 2);
+	BOOST_CHECK_EQUAL(std::get<3>(res), 101);
+}
+
 BOOST_AUTO_TEST_CASE(FloatArrayTest)
 {
 	//////////BSON////////////

@@ -2,6 +2,7 @@
 
 #pragma once
 #include "bobl/cbor/details/decoder.hpp"
+#include "bobl/cbor/details/options.hpp"
 #include "bobl/cbor/details/utility.hpp"
 #include "bobl/cbor/cbor.hpp"
 #include "bobl/utility/flyweight.hpp"
@@ -128,9 +129,9 @@ bobl::Type type(bobl::flyweight::lite::Any<Iterator> const& any)
 }
 
 template<typename ...Args, typename Iterator>
-auto decode(Iterator& begin, Iterator end) -> typename bobl::utility::DecodeParameters<Args...>::Result
+auto decode(Iterator& begin, Iterator end) -> typename bobl::utility::DecodeParameters<bobl::cbor::NsTag, Args...>::Result
 {
-	using Parameters = bobl::utility::DecodeParameters<Args...>;
+	using Parameters = bobl::utility::DecodeParameters<bobl::cbor::NsTag, Args...>;
 	using Decoder = typename decoder::details::Decoder<typename Parameters::Result, typename Parameters::Options>::type;
 	return Decoder::decode(begin, end);
 }

@@ -21,9 +21,8 @@ namespace options {
 	struct UsePositionAsName {};
 	template<typename T> struct ByteType {};
 	using IntegerOptimizeSize = RelaxedIntegers;
-
-
-	struct NonUniformArray {}; // makes more sence using it as part of EffectiveOptions for particular type
+	template<typename T> struct HeterogeneousArray {};
+	template<typename T> using NonUniformArray = HeterogeneousArray<T>;
 }// namespace options
 
 template<typename T, typename ...Options>

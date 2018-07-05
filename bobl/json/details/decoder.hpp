@@ -4,10 +4,12 @@
 
 #include "bobl/json/details/sequence.hpp"
 #include "bobl/json/details/parser.hpp"
+#include "bobl/json/details/options.hpp"
 #include "bobl/json/adapter.hpp"
 #include "bobl/utility/utils.hpp"
 #include "bobl/utility/type_name.hpp"
 #include "bobl/utility/names.hpp"
+#include "bobl/utility/parameters.hpp"
 #include "bobl/utility/adapter.hpp"
 #include "bobl/utility/decoders.hpp"
 #include "bobl/utility/diversion.hpp"
@@ -264,8 +266,7 @@ public:
 };
 
 template<typename T, typename Options>
-class Handler<T, Options, typename boost::mpl::and_<typename boost::fusion::traits::is_sequence<T>::type,
-								boost::mpl::not_<bobl::utility::options::Contains<typename bobl::json::EffectiveOptions<T, Options>::type, bobl::options::NonUniformArray>>>::type>
+class Handler<T, Options, typename boost::mpl::and_<typename boost::fusion::traits::is_sequence<T>, bobl::utility::IsObjectSequence<bobl::json::NsTag, T, Options>>::type>
 {
 public:
 	template<typename Iterator>

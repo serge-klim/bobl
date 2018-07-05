@@ -3,6 +3,7 @@
 #pragma once
 
 #include "bobl/cbor/details/utility.hpp"
+#include "bobl/cbor/details/options.hpp"
 #include "bobl/cbor/options.hpp"
 #include "bobl/cbor/adapter.hpp"
 #include "bobl/cbor/cbor.hpp"
@@ -14,6 +15,7 @@
 #include "bobl/utility/names.hpp"
 #include "bobl/utility/adapter.hpp"
 #include "bobl/utility/decoders.hpp"
+#include "bobl/utility/parameters.hpp"
 #include "bobl/utility/diversion.hpp"
 #include "bobl/options.hpp"
 #include "bobl/bobl.hpp"
@@ -561,6 +563,20 @@ public:
 };
 
 template<typename Iterator, typename ...Options>
+struct ArrayValue
+{
+	template<typename OtherIterator, typename ...OtherOptions>
+	using rebase = ArrayValue<OtherIterator, OtherOptions...>;
+
+	template<typename T, std::size_t, typename ExpectedName>
+	T decode(Iterator& begin, Iterator end, ExpectedName const& /*ename*/) const
+	{
+		using Decoder = typename Decoder<T, bobl::Options<Options...>>::type;
+		return Decoder::decode(begin, end);
+	}
+};
+
+template<typename Iterator, typename ...Options>
 class ObjectDecoder
 {
 	template<typename T>
@@ -581,7 +597,7 @@ public:
 	}
 
 	template<typename T, std::size_t, typename ExpectedName = bobl::utility::ObjectNameIrrelevant>
-	typename std::enable_if<!IsNameValue<T>::value, T>::type decode(Iterator& begin, Iterator end, ExpectedName const& ename = bobl::utility::ObjectNameIrrelevant{})
+	typename std::enable_if<!IsNameValue<T>::value, T>::type decode(Iterator& begin, Iterator end, ExpectedName const& ename = bobl::utility::ObjectNameIrrelevant{}) const
 	{
 		return NameValue<T>::decode(begin, end, ename).value();
 	}
@@ -589,20 +605,28 @@ public:
 
 template<typename T, typename ...Options>
 class Handler<T, bobl::Options<Options...>, typename boost::mpl::and_<boost::fusion::traits::is_sequence<T>,
-																	boost::mpl::not_<bobl::utility::options::Contains<typename bobl::cbor::EffectiveOptions<T, Options...>::type, bobl::options::NonUniformArray>>,
 													typename boost::mpl::or_<
 																	boost::mpl::not_<bobl::utility::options::Contains<typename bobl::cbor::EffectiveOptions<T, Options...>::type, bobl::options::StructAsDictionary>>,
 																	boost::mpl::not_<bobl::utility::DictionaryDecoderCompatible<T,
 																						typename bobl::cbor::EffectiveOptions<T, Options...>::type>>>::type
 																																						>::type>
 {
+	using HeterogeneousArray = bobl::utility::IsHeterogeneousArraySequence<bobl::cbor::NsTag, T, Options...>;
+	template <typename Iterator>
+	using ObjectDecoder = typename std::conditional<HeterogeneousArray::value,
+												ArrayValue<Iterator, Options...>,
+												bobl::cbor::decoder::details::ObjectDecoder<Iterator, Options...>>::type;
+
+	using MajorType = typename std::conditional<HeterogeneousArray::value,
+												std::integral_constant<cbor::MajorType, cbor::MajorType::Array>,
+												std::integral_constant<cbor::MajorType, cbor::MajorType::Dictionary>>::type;
 public:
 	template<typename Iterator>
 	static T decode(Iterator& begin, Iterator end)
 	{
-		bobl::cbor::utility::decode::validate<cbor::MajorType::Dictionary>(begin, end);
+		bobl::cbor::utility::decode::validate<MajorType::value>(begin, end);
 		auto len = bobl::cbor::utility::decode::lenght(begin, end);
-		auto res = bobl::utility::Decoder<T, bobl::cbor::decoder::details::ObjectDecoder<Iterator>, Options...>{}(begin, end);
+		auto res = bobl::utility::Decoder<T, ObjectDecoder<Iterator>, Options...>{}(begin, end);
 		if (len > boost::fusion::result_of::size<T>::value)
 		{
 			if /*constexpr*/ (bobl::utility::options::Contains<typename bobl::cbor::EffectiveOptions<T, Options...>::type, bobl::options::ExacMatch>::value)
@@ -647,7 +671,6 @@ private:
 
 template<typename T, typename ...Options>
 class Handler<T, bobl::Options<Options...>, typename boost::mpl::and_<boost::fusion::traits::is_sequence<T>,
-																	boost::mpl::not_<bobl::utility::options::Contains<typename bobl::cbor::EffectiveOptions<T, Options...>::type, bobl::options::NonUniformArray>>,
 																	bobl::utility::options::Contains<typename bobl::cbor::EffectiveOptions<T, Options...>::type, bobl::options::StructAsDictionary>,
 																	bobl::utility::DictionaryDecoderCompatible<T, typename bobl::cbor::EffectiveOptions<T, Options...>::type>>::type>
 {

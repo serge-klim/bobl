@@ -3,6 +3,7 @@
 #pragma once
 #include "bobl/json/details/decoder.hpp"
 #include "bobl/json/details/parser.hpp"
+#include "bobl/json/details/options.hpp"
 #include "bobl/utility/parameters.hpp"
 #include "bobl/utility/any.hpp"
 #include "bobl/bobl.hpp"
@@ -28,12 +29,12 @@ Type type(bobl::flyweight::lite::utility::AnyType<Iterator, Tag> const& any)
 }
 
 template<typename ...Args, typename Iterator>
-auto decode(Iterator& begin, Iterator end) -> typename bobl::utility::DecodeParameters<Args...>::Result
+auto decode(Iterator& begin, Iterator end) -> typename bobl::utility::DecodeParameters<bobl::json::NsTag, Args...>::Result
 {
-	using Parameters = typename bobl::utility::DecodeParameters<Args...>::Parameters;
-	using Options = typename bobl::utility::DecodeParameters<Args...>::Options;
-	using Decoder = typename decoder::details::Decoder<Parameters, Options>::type;
-	return bobl::utility::DecodeParameters<Args...>::result(Decoder::decode(begin, end));
+	using Parameters = typename bobl::utility::DecodeParameters<bobl::json::NsTag, Args...>::Parameters;
+	using Options = typename bobl::utility::DecodeParameters<bobl::json::NsTag, Args...>::Options;
+	using Decoder = typename decoder::details::Decoder<bobl::json::NsTag, Parameters, Options>::type;
+	return bobl::utility::DecodeParameters<bobl::json::NsTag, Args...>::result(Decoder::decode(begin, end));
 }
 
 }/*namespace json*/ } /*namespace bobl*/
