@@ -11,3 +11,5 @@ project
 ;
 
 build-project tests ;
+build-project examples/bson ;
+build-project examples/cbor ;

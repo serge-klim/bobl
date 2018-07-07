@@ -68,7 +68,7 @@ int main()
 							  {0x1,0x2, 0x3}
 
 	};
-	std::vector<std::uint8_t> encoded =  bobl::bson::encode<Extended>(extended);
+	std::vector<std::uint8_t> encoded =  bobl::bson::encode(extended);
     auto begin = encoded.data();
 	auto end = begin + encoded.size();
 	auto extended2 =  bobl::bson::decode<Extended>(begin, end);
