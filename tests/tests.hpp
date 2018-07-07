@@ -343,4 +343,12 @@ BOOST_FUSION_ADAPT_STRUCT(
 	named,
 	dummy)
 
+struct SimpleOptionalTest
+{
+	diversion::optional<TheEnumClass> type; //will be encoded as int
+	int id;
+};
+
+BOOST_FUSION_ADAPT_STRUCT(SimpleOptionalTest, type, id)
+
 

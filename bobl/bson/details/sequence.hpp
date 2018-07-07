@@ -71,10 +71,7 @@ class SequenceHandler<T, HeterogeneousArray, bobl::Options<Options...>, typename
 {
 	static_assert(boost::fusion::traits::is_sequence<T>::value, "SequenceHandler requires boost mpl sequence");
 	template <typename Iterator>
-	using ObjectDecoder = ObjectDecoder<Iterator, 
-								!bobl::utility::options::Contains<typename bobl::bson::EffectiveOptions<T, Options...>::type, bobl::options::HeterogeneousArray<T>>::value,
-								Options...>;
-
+	using ObjectDecoder = ObjectDecoder<Iterator, HeterogeneousArray, Options...>;
 public:
 	template<typename Iterator>
 	static T decode(Iterator begin, Iterator end)

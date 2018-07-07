@@ -424,4 +424,22 @@ BOOST_AUTO_TEST_CASE(NamedVariantAsVariantTest)
 	BOOST_CHECK_EQUAL(res.dummy, value.dummy);
 }
 
+BOOST_AUTO_TEST_CASE(OptionalTest)
+{
+	auto data = SimpleOptionalTest{ {}, 123 };
+	std::vector<std::uint8_t> encoded = bobl::cbor::encode(data);
+	auto begin = encoded.data();
+	auto end = begin + encoded.size();
+	auto decoded = bobl::cbor::decode<SimpleOptionalTest>(begin, end);
+	BOOST_CHECK(!decoded.type);
+	BOOST_CHECK_EQUAL(decoded.id, data.id);
+
+	begin = encoded.data();
+	auto decoded_tuple = bobl::cbor::decode<boost::optional<TheEnumClass>, boost::optional<int>>(begin, end);
+	//this supposed to be broken please see README.md
+	BOOST_CHECK(!std::get<0>(decoded_tuple));
+	BOOST_CHECK_EQUAL(std::get<1>(decoded_tuple).get(), 123);
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
