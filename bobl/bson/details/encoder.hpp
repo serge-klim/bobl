@@ -184,7 +184,7 @@ template<typename Options, typename Iterator, typename T>
 inline Iterator encode(Iterator out, diversion::string_view name, T const& value)
 {
 	using Type = typename std::conditional<bobl::utility::Adaptable<T, bobl::bson::Adapter<T>>::value, bobl::bson::Adapter<T>, T>::type;
-	return Handler<Type, Options>::encode(std::move(out), std::move(name), value);
+	return Handler<Type, typename bobl::bson::EffectiveOptions<T, Options>::type>::encode(std::move(out), std::move(name), value);
 }
 
 template<typename T, typename Options>
@@ -194,9 +194,23 @@ public:
 	template<typename Iterator>
 	static Iterator encode(Iterator out, diversion::string_view name, diversion::optional<T> const& value)
 	{
-		return !value 
-			? out
+		return !value
+			? encode_empty<Options>(std::move(out), std::move(name))
 			: details::encode<Options, Iterator, T>(std::move(out), std::move(name), value.get());
+	}
+private:
+	template<typename Opts, typename Iterator>
+	static auto encode_empty(Iterator out, diversion::string_view /*name*/)
+		-> typename std::enable_if<!bobl::utility::options::Contains<Opts, bobl::options::OptionalAsNull>::value, Iterator>::type
+	{
+		return out;
+	}
+
+	template<typename Opts, typename Iterator>
+	static auto encode_empty(Iterator out, diversion::string_view name)
+		-> typename std::enable_if<bobl::utility::options::Contains<Opts, bobl::options::OptionalAsNull>::value, Iterator>::type
+	{
+		return Handler<Header, Options>::encode(std::move(out), std::make_pair(bobl::bson::Null, std::move(name)));
 	}
 };
 

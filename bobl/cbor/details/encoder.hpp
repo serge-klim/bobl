@@ -162,7 +162,7 @@ template<typename Options, typename Iterator, typename T>
 inline Iterator encode(Iterator out, T const& value)
 {
 	using Type = typename std::conditional<bobl::utility::Adaptable<T, bobl::cbor::Adapter<T>>::value, bobl::cbor::Adapter<T>, T>::type;
-	return Handler<Type, Options>::encode(std::move(out), value);
+	return Handler<Type, typename bobl::cbor::EffectiveOptions<T, Options>::type>::encode(std::move(out), value);
 }
 
 template<typename T, typename Options>
@@ -187,7 +187,6 @@ private:
 	template<std::size_t N, typename U, typename Iterator>
 	static typename std::enable_if<boost::fusion::result_of::size<U>::value == N, Iterator>::type encode(Iterator out, U const& /*sequence*/) { return out; }
 };
-
 
 template<typename T, typename Options>
 class Handler<T, Options, typename boost::mpl::and_<boost::fusion::traits::is_sequence<T>,
@@ -221,6 +220,13 @@ private:
 		return details::encode<Options, Iterator, U>(out, value);
 	}
 
+	template<typename U, typename Iterator>
+	static auto encode(Iterator out, diversion::string_view name, diversion::optional<U> const& value)
+		-> typename std::enable_if<!bobl::utility::Adaptable<diversion::optional<U>, bobl::cbor::Adapter<diversion::optional<U>>>::value, Iterator>::type
+	{
+		return Handler<diversion::optional<U>, typename bobl::cbor::EffectiveOptions<diversion::optional<U>, Options>::type>::encode(out, name, value);
+	}
+
 	template<typename ...Types, typename Iterator>
 	static Iterator encode(Iterator out, diversion::string_view /*name*/, diversion::variant<bobl::UseTypeName, Types...> const& value)
 	{
@@ -247,11 +253,37 @@ class Handler<diversion::optional<T>, Options, boost::mpl::true_>
 {
 public:
 	template<typename Iterator>
+	static Iterator encode(Iterator out, diversion::string_view name, diversion::optional<T> const& value)
+	{
+		if (!value == false || bobl::utility::options::Contains<Options, bobl::options::OptionalAsNull>::value)
+		{
+			out = Handler<diversion::string_view, bobl::options::None>::encode(std::move(out), name);
+			out = encode(std::move(out), value);
+		}
+		return out;
+	}
+
+	template<typename Iterator>
 	static Iterator encode(Iterator out, diversion::optional<T> const& value)
 	{
 		return !value
-			? out++ = std::uint8_t(bobl::cbor::Null)
+			? encode_empty<Options>(std::move(out))
 			: details::encode<Options, Iterator, T>(std::move(out), value.get());
+	}
+private:
+	template<typename Opts, typename Iterator>
+	static auto encode_empty(Iterator out) ->
+		typename std::enable_if<!bobl::utility::options::Contains<Opts, bobl::options::OptionalAsNull>::value, Iterator>::type
+	{
+		return out;
+	}
+
+	template<typename Opts, typename Iterator>
+	static auto encode_empty(Iterator out) ->
+		typename std::enable_if<bobl::utility::options::Contains<Opts, bobl::options::OptionalAsNull>::value, Iterator>::type
+	{
+		out = std::uint8_t(bobl::cbor::Null);
+		return ++out;
 	}
 };
 

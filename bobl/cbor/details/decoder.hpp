@@ -423,8 +423,8 @@ template<typename T, typename Options/*, typename Enabled = boost::mpl::true_*/>
 class NameValue<diversion::optional<T>, Options>
 {	
 	using Decoder = typename Decoder<T, Options>::type;
-	NameValue() : name_{ std::string{} }, value_{diversion::nullopt }{}
-	NameValue(Name&& name, T&& value) : name_{ std::move(name) }, value_{ diversion::make_optional(std::move(value)) } {}
+	NameValue() : name_{ std::string{} }, value_{ diversion::nullopt }{}
+	NameValue(Name&& name, diversion::optional<T>&& value) : name_{ std::move(name) }, value_{ std::move(value) } {}
 public:
 	diversion::string_view name() const { return {name_()}; }
 	diversion::optional<T> const& value() const { return value_; }
@@ -435,8 +435,10 @@ public:
 		if (begin == end)
 			return { };
 
+		auto tmp = begin;
 		auto name = Handler<Name, bobl::options::None>::decode(begin, end);
-		return !ename.compare(name()) || (begin != end && decode_null(begin, end)) ? NameValue{ } : NameValue{ std::move(name), Decoder::decode(begin, end) };
+		return ename.compare(name()) ? NameValue{ std::move(name), decode_null(begin, end) ? diversion::optional<T>{} : diversion::make_optional(Decoder::decode(begin, end)) }
+									: (begin = tmp, NameValue{});
 	}
 
 	template<typename Iterator>

@@ -139,13 +139,25 @@ BOOST_AUTO_TEST_CASE(RelaxedIntTest)
 	uint8_t const *begin = data;
 	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
 	auto doc = bobl::bson::flyweight::Document::decode(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
 	BOOST_CHECK_THROW((bobl::bson::cast<std::tuple<std::uint64_t>>(doc)), bobl::IncorrectObjectType);
 	BOOST_CHECK_THROW((bobl::bson::cast<std::uint64_t>(doc)), bobl::IncorrectObjectType);
 	BOOST_CHECK_THROW((bobl::bson::cast<std::int64_t>(doc)), bobl::IncorrectObjectType);
 	BOOST_CHECK_THROW((bobl::bson::cast<long long>(doc)), bobl::IncorrectObjectType);
 	auto res = bobl::bson::cast<std::uint64_t, bobl::Options<bobl::options::RelaxedIntegers>>(doc);
 	BOOST_CHECK_EQUAL(res, 1);
+}
+
+BOOST_AUTO_TEST_CASE(RelaxedIntTest2)
+{
+	//{'int': 1}
+	//(14) : b'\x0e\x00\x00\x00\x10int\x00\x01\x00\x00\x00\x00'
+	std::uint8_t data[] = { 0xe, 0x0, 0x0, 0x0, 0x10, 0x69, 0x6e, 0x74, 0x0, 0x1, 0x0, 0x0, 0x0, 0x0 };
+	uint8_t const *begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	auto res = bobl::bson::decode<std::uint64_t, bobl::Options<bobl::options::RelaxedIntegers>>(begin, end);
 	BOOST_CHECK_EQUAL(begin, end);
+	BOOST_CHECK_EQUAL(res, 1);
 }
 
 template<typename T>

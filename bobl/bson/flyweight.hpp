@@ -68,17 +68,17 @@ public:
 			return { diversion::nullopt };
 
 		auto header = details::ObjectHeader{ begin, end };
-//		if (!ename.compare(header.name()))
-//			throw bobl::IncorrectObjectName{ str(boost::format("unexpected BSON object name : \"%1%\" (expected \"%2%\").") % header.name() % ename.name()) };
-		return !ename.compare(header.name()) || header.type() == bobl::bson::Null 
+		return !ename.compare(header.name())  
 					? NameValue{ diversion::nullopt } 
-					: decode(std::move(header), begin, end);
+					: header.type() == bobl::bson::Null 
+								? begin =  header.value(), NameValue{ diversion::nullopt }
+								: decode(std::move(header), begin, end);
 	}
 
 
 	static NameValue decode(bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end, bobl::utility::ObjectNameIrrelevant const& /*ename*/)
 	{ 
-		return begin == end ? NameValue{ diversion::nullopt } : NameValue{ try_decode<Value>(begin, end) };
+		return begin == end ? NameValue{ diversion::nullopt } :  try_decode<Value>(begin, end) ;
 	}
 
 	static NameValue decode(details::ObjectHeader&& header, bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end) { return { diversion::make_optional(Value::decode(std::move(header), begin, end)) }; }
@@ -87,25 +87,31 @@ public:
 	static auto is(Header const& header) -> typename std::enable_if<details::HasIs<Value, Header>::value, bool>::type { return Value::is(header); }
 private:
 	template<typename U>
-	static auto try_decode(bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end) -> typename std::enable_if<details::HasIs<U, details::ObjectHeader>::value, diversion::optional<U>>::type
+	static NameValue try_decode(bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end)
 	{
-		auto header = bobl::bson::flyweight::details::ObjectHeader{ begin, end };
+		auto header = details::ObjectHeader{ begin, end };
+		return header.type() == bobl::bson::Null
+							? begin = header.value(), NameValue{ diversion::nullopt }
+							: NameValue{ try_decode<U>(std::move(header), begin, end) };
+	}
+
+	template<typename U>
+	static auto try_decode(details::ObjectHeader&& header, bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end) -> typename std::enable_if<details::HasIs<U, details::ObjectHeader>::value, diversion::optional<U>>::type
+	{
 		return U::is(header) ? diversion::make_optional(U::decode(std::move(header), begin, end)) : diversion::nullopt ;
 	}
 
 	template<typename U>
-	static auto try_decode(bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end) -> typename std::enable_if<!details::HasIs<U, details::ObjectHeader>::value, diversion::optional<U>>::type
+	static auto try_decode(details::ObjectHeader&& header, bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end) -> typename std::enable_if<!details::HasIs<U, details::ObjectHeader>::value, diversion::optional<U>>::type
 	{
-		auto i = begin;
 		try
 		{
-			auto header = bobl::bson::flyweight::details::ObjectHeader{ begin, end };
 			return { U::decode(std::move(header), begin, end) };
 		}
 		catch (bobl::IncorrectObjectType&)
 		{
 		}
-		begin = i;
+		begin = header.position();
 		return { diversion::nullopt };
 	}
 private:

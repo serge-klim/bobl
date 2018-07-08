@@ -3,22 +3,8 @@ project
     <library>/boost//headers
 ;
 
-exe simple1 :
-          simple1.cpp
-          ;
-
-exe simple2 :
-          simple2.cpp
-          ;
-
-exe simple3 :
-          simple3.cpp
-          ;
-
-exe named_tuple :
-          named_tuple.cpp
-          ;
-
-exe extended :
-          extended.cpp
-          ;
+exe simple1 : simple1.cpp ;
+exe simple2 : simple2.cpp ;
+exe simple3 : simple3.cpp ;
+exe named_tuple : named_tuple.cpp ;
+exe extended : extended.cpp ;
