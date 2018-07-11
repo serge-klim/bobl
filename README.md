@@ -63,7 +63,7 @@ Simple simple = bobl::bson::decode<Simple>(begin, end);
 as well as encoded:
 
 ```
-std::vector<std::uint8_t> blob = bobl::bson::encode(begin, end);
+std::vector<std::uint8_t> blob = bobl::bson::encode(simple);
 ```
 BSON complete example: [simple3.cpp](https://github.com/serge-klim/bobl/blob/master/examples/bson/simple3.cpp)  
 CBOR complete example: [simple3.cpp](https://github.com/serge-klim/bobl/blob/master/examples/cbor/simple3.cpp)
@@ -141,6 +141,7 @@ struct Extended
 	boost::uuids::uuid uuid;
 	boost::optional<Enum> enm;
 	std::vector<std::uint8_t> binary; // this will be encoded as binary object
+	std::chrono::system_clock::time_point tp;
 };
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -152,7 +153,8 @@ BOOST_FUSION_ADAPT_STRUCT(
 	var,
 	uuid,
 	enm,
-	binary)
+	binary,
+	tp)
 
     auto extended = Extended{};
 	std::vector<std::uint8_t> encoded =  bobl::bson::encode(extended)

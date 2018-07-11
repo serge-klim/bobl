@@ -241,6 +241,7 @@ public:
 template<typename ...Types, typename Options>
 class Handler<diversion::variant<bobl::UseTypeName, Types...>, Options, boost::mpl::true_>
 {
+	static_assert(sizeof...(Types) != 0, "variant<bobl::UseTypeName> doesn't make much sense");
 	template<typename Iterator>
 	struct ValueVisitor : public boost::static_visitor<Iterator>
 	{

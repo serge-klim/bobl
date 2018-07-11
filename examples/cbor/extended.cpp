@@ -39,6 +39,7 @@ struct Extended
 	boost::uuids::uuid uuid;
 	boost::optional<Enum> enm;
 	std::vector<std::uint8_t> binary; // this will be encoded as binary object
+	std::chrono::system_clock::time_point tp;
 };
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -50,7 +51,8 @@ BOOST_FUSION_ADAPT_STRUCT(
 	var,
 	uuid,
 	enm,
-	binary)
+	binary,
+	tp)
 
 int main()
 {
@@ -65,8 +67,8 @@ int main()
 							  101,
 							  gen("4E983010-FA64-4BAA-ABED-DD82FD691D18"),
 							  Enum::Three,
-							  {0x1,0x2, 0x3}
-
+							  {0x1,0x2, 0x3},
+							  std::chrono::system_clock::now()
 	};
 	std::vector<std::uint8_t> encoded =  bobl::bson::encode(extended);
     auto begin = encoded.data();

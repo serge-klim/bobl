@@ -204,28 +204,4 @@ BOOST_AUTO_TEST_CASE(MapDecoderTest)
 	map_decoder_compiletime_test();
 }
 
-//template<typename ...Args>
-//void test_xxx();
-//
-//void any_compiletime_test()
-//{
-//	test_xxx<bobl::details::X::ConstPointersRange>();
-//	test_xxx<typename bobl::details::MakeVariant<bobl::details::X::ConstPointersRange>::type>();
-//	test_xxx<bobl::flyweight::Any>::type>();
-//}
-//
-//BOOST_AUTO_TEST_CASE(AnyTest)
-//{
-//	any_compiletime_test();
-//}
-
-
-BOOST_AUTO_TEST_CASE(EnumAddapterTest)
-{
-//     enum X { x0, x1, x2, x3 };
-//     static_assert(bobl::utility::adapters::Adapt<X >::value, "oops can't adapt enum");
-}
-
-
-
 BOOST_AUTO_TEST_SUITE_END()

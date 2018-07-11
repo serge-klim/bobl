@@ -391,6 +391,12 @@ BOOST_AUTO_TEST_CASE(TimepointTest)
 	BOOST_CHECK((value.vector[0] - res.vector[0] < std::chrono::seconds{ 1 }));
 }
 
+BOOST_AUTO_TEST_CASE(EmptyNamedVariantTest)
+{
+	using NamedVariant = diversion::variant<bobl::UseTypeName, int>;
+	BOOST_CHECK_THROW((bobl::cbor::encode(NamedVariant{})), bobl::InvalidObject);
+}
+
 BOOST_AUTO_TEST_CASE(NamedVariantTest)
 {
 	using NamedVariant = diversion::variant<bobl::UseTypeName, Simple, Extended>;

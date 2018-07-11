@@ -5,6 +5,7 @@
 #include "bobl/names.hpp"
 #include "bobl/options.hpp"
 #include "bobl/bobl.hpp"
+#include "bobl/utility/type_name.hpp"
 #include "bobl/utility/diversion.hpp"
 #include <boost/fusion/include/at.hpp>
 #include <boost/fusion/include/size.hpp>
@@ -115,7 +116,11 @@ template<typename Sequence, typename ObjectDecoder, typename ...Options>
 Sequence bobl::utility::DictionaryDecoder<Sequence, ObjectDecoder, Options...>::Emplacer::value() &&
 {
 	if (!initialized_.all())
+	{
+		if /*constexpr*/ (bobl::utility::options::Contains<bobl::Options<Options...>, bobl::options::ExacMatch>::value)
+			throw bobl::InputToShort{ str(boost::format("not enough data to completely initialize dictionary %1%>") % bobl::utility::type_name<Sequence>()) };
 		initialize<0>();
+	}
 	return std::move(sequence_);
 }
 
@@ -157,7 +162,7 @@ template<std::size_t N, typename Iterator>
 auto bobl::utility::DictionaryDecoder<Sequence, ObjectDecoder, Options...>::Emplacer::emplace(typename ObjectDecoder::template rebase<Iterator, Options...>& decoder, Key&& key, Iterator& begin, Iterator end)  
 			-> typename std::enable_if<N == boost::fusion::result_of::size<Sequence>::value>::type
 {
-	if(bobl::utility::options::Contains<bobl::Options<Options...>, bobl::options::ExacMatch>::value)
+	if /*constexpr*/ (bobl::utility::options::Contains<bobl::Options<Options...>, bobl::options::ExacMatch>::value)
 		throw bobl::InvalidObject(str(boost::format("unexpected key \"%1%\" found in the dictionary") % name(key)));
 
 	decoder.template decode<Skipper>(std::move(key), begin, end);

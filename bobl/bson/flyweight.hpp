@@ -133,6 +133,7 @@ public:
 template<typename ...Types, typename Options>
 class NameValue<diversion::variant<bobl::UseTypeName, Types...>, Options>
 {
+	static_assert(sizeof...(Types) != 0, "variant<bobl::UseTypeName> doesn't make much sense");
 	using Value = diversion::variant<bobl::UseTypeName, Types...>;
 	using TypesTuple = typename boost::mpl::transform<std::tuple<Types...>, details::EffectiveValueHandler<boost::mpl::placeholders::_1, Options>>::type;
 	using ValueHandler = typename bobl::utility::MakeVariant<TypesTuple>::type;

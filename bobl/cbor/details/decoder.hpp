@@ -521,6 +521,7 @@ public:
 template<typename ...Types, typename Options>
 class NameValue<diversion::variant<bobl::UseTypeName, Types...>, Options> /*: public NameValue<T, Options>*/
 {
+	static_assert(sizeof...(Types) != 0, "variant<bobl::UseTypeName> doesn't make much sense");
 	using Value = diversion::variant<bobl::UseTypeName, Types...>;
 	NameValue(Value&& value) : value_{ std::move(value) } {}
 public:
@@ -558,6 +559,7 @@ private:
 template<typename ...Types, typename Options>
 class Handler<diversion::variant<bobl::UseTypeName, Types...>, Options, boost::mpl::true_>
 {
+	static_assert(sizeof...(Types) != 0, "variant<bobl::UseTypeName> doesn't make much sense");
 	using Value = diversion::variant<bobl::UseTypeName, Types...>;
 public:
 	template<typename Iterator>

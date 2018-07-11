@@ -339,6 +339,7 @@ BOOST_AUTO_TEST_CASE(DictionaryOfIntegersAndMoreTest)
 	uint8_t const* begin = data;
 	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
 	auto res = bobl::cbor::decode<IntDictionaryX, bobl::Options<bobl::options::StructAsDictionary>>(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
 	BOOST_CHECK(res.xtra1.empty());
 	BOOST_CHECK_EQUAL(res.tiny, 3);
 	BOOST_CHECK_EQUAL(res.short_, 128);
@@ -350,7 +351,17 @@ BOOST_AUTO_TEST_CASE(DictionaryOfIntegersAndMoreTest)
 	BOOST_CHECK_EQUAL(res.neg_int64, -268435454);
 	BOOST_CHECK(res.xtra2.empty());
 	BOOST_CHECK(res.xtra3.empty());
-	BOOST_CHECK_EQUAL(begin, end);
+}
+
+BOOST_AUTO_TEST_CASE(DictionaryOfIntegersAndMoreExacMatchTest)
+{
+	//{'tiny': 3, 'short_': 128, 'int_': 32767, 'int64': 268435455, 'neg_tiny': -4, 'neg_short': -121, 'neg_int': -32765, 'neg_int64': -268435454}
+	//(83) : b'\xa8dtiny\x03fshort_\x18\x80dint_\x19\x7f\xffeint64\x1a\x0f\xff\xff\xffhneg_tiny#ineg_short8xgneg_int9\x7f\xfcineg_int64:\x0f\xff\xff\xfd'
+	std::uint8_t data[] = { 0xa8, 0x64, 0x74, 0x69, 0x6e, 0x79, 0x3, 0x66, 0x73, 0x68, 0x6f, 0x72, 0x74, 0x5f, 0x18, 0x80, 0x64, 0x69, 0x6e, 0x74, 0x5f, 0x19, 0x7f, 0xff, 0x65, 0x69, 0x6e, 0x74, 0x36, 0x34, 0x1a, 0xf, 0xff, 0xff, 0xff, 0x68, 0x6e, 0x65, 0x67, 0x5f, 0x74, 0x69, 0x6e, 0x79, 0x23, 0x69, 0x6e, 0x65, 0x67, 0x5f, 0x73, 0x68, 0x6f, 0x72, 0x74, 0x38, 0x78, 0x67, 0x6e, 0x65, 0x67, 0x5f, 0x69, 0x6e, 0x74, 0x39, 0x7f, 0xfc, 0x69, 0x6e, 0x65, 0x67, 0x5f, 0x69, 0x6e, 0x74, 0x36, 0x34, 0x3a, 0xf, 0xff, 0xff, 0xfd };
+
+	uint8_t const* begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	BOOST_CHECK_THROW((bobl::cbor::decode<IntDictionaryX, bobl::Options<bobl::options::StructAsDictionary, bobl::options::ExacMatch>>(begin, end)), bobl::InputToShort);
 }
 
 BOOST_AUTO_TEST_CASE(StructOfIntegersEncodedInSameOrderTest)
@@ -362,6 +373,7 @@ BOOST_AUTO_TEST_CASE(StructOfIntegersEncodedInSameOrderTest)
 	uint8_t const* begin = data;
 	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
 	auto res = bobl::cbor::decode<OrderedIntDictionary>(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
 	BOOST_CHECK_EQUAL(res.tiny, 3);
 	BOOST_CHECK_EQUAL(res.short_, 128);
 	BOOST_CHECK_EQUAL(res.int_, 32767);
@@ -370,7 +382,6 @@ BOOST_AUTO_TEST_CASE(StructOfIntegersEncodedInSameOrderTest)
 	BOOST_CHECK_EQUAL(res.neg_short, -121);
 	BOOST_CHECK_EQUAL(res.neg_int, -32765);
 	BOOST_CHECK_EQUAL(res.neg_int64, -268435454);
-	BOOST_CHECK_EQUAL(begin, end);
 }
 
 BOOST_AUTO_TEST_CASE(ShortStructOfIntegersEncodedInSameOrderTest)

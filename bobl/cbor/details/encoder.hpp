@@ -5,6 +5,7 @@
 #include "bobl/cbor/details/options.hpp"
 #include "bobl/cbor/adapter.hpp"
 #include "bobl/cbor/cbor.hpp"
+#include "bobl/utility/type_name.hpp"
 #include "bobl/utility/timepoint.hpp"
 #include "bobl/utility/options.hpp"
 #include "bobl/utility/float.hpp"
@@ -313,6 +314,7 @@ public:
 template<typename ...Types, typename Options>
 class Handler<diversion::variant<bobl::UseTypeName, Types...>, Options, boost::mpl::true_>
 {
+	static_assert(sizeof...(Types)!=0, "variant<bobl::UseTypeName> doesn't make much sense");
 	template<typename Iterator>
 	struct ValueVisitor : public boost::static_visitor<Iterator>
 	{
