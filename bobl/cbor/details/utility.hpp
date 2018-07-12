@@ -66,7 +66,7 @@ inline const char* to_string(MajorType type);
 
 namespace utility { namespace decode { 
 
-enum:std::uint64_t { IndefiniteLenght = (std::numeric_limits<std::uint64_t>::max)() };
+enum:std::uint64_t { IndefiniteLength = (std::numeric_limits<std::uint64_t>::max)() };
 
 inline constexpr bobl::cbor::Type type(std::uint8_t val) { return bobl::cbor::Type(val); }
 inline constexpr bobl::cbor::MajorType major_type(bobl::cbor::Type type) { return bobl::cbor::MajorType(type&bobl::cbor::MajorTypeMask); }
@@ -185,24 +185,24 @@ T floating_point(Iterator& begin, Iterator end)
     return res;
 }
 template<typename Iterator>
-std::uint64_t lenght(Iterator& begin, Iterator end)
+std::uint64_t length(Iterator& begin, Iterator end)
 {
     return (*begin&cbor::AditionalInfoMask) == 31 
-        ? ++begin, bobl::cbor::utility::decode::IndefiniteLenght
+        ? ++begin, bobl::cbor::utility::decode::IndefiniteLength
         : integer(begin, end);
 }
 
 template<typename T, typename Iterator>
 T string(Iterator& begin, Iterator end)
 {
-	auto len = bobl::cbor::utility::decode::lenght(begin, end);
-	if (len == bobl::cbor::utility::decode::IndefiniteLenght)
+	auto len = bobl::cbor::utility::decode::length(begin, end);
+	if (len == bobl::cbor::utility::decode::IndefiniteLength)
 	{
 		auto res = T{};
 		for (;;)
 		{
 			if (begin == end)
-				throw bobl::InvalidObject{ "not enough data provided to decode indefinite lenght CBOR string" };
+				throw bobl::InvalidObject{ "not enough data provided to decode indefinite length CBOR string" };
 			if (*begin == cbor::Break)
 				break;
 			res.push_back(*begin++);

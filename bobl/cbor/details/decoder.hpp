@@ -124,8 +124,8 @@ public:
 		std::vector<T> res;
 		bobl::cbor::utility::decode::validate<cbor::MajorType::Array>(begin, end);
 		assert(is(bobl::cbor::utility::decode::type(*begin)) && "cbor array::is is broken");
-		auto len = bobl::cbor::utility::decode::lenght(begin, end);
-		if (len != bobl::cbor::utility::decode::IndefiniteLenght)
+		auto len = bobl::cbor::utility::decode::length(begin, end);
+		if (len != bobl::cbor::utility::decode::IndefiniteLength)
 		{
 			res.reserve(len);
 			while (len-- != 0)
@@ -136,7 +136,7 @@ public:
 			for (;;)
 			{
 				if (begin == end)
-					throw bobl::InvalidObject{"not enough data provided to decode indefinite lenght CBOR array"};
+					throw bobl::InvalidObject{"not enough data provided to decode indefinite length CBOR array"};
 				if (*begin == cbor::Break)
 					break;
 				res.emplace_back(Handler<T, Options>::decode(begin, end));
@@ -224,8 +224,8 @@ public:
 			case bobl::cbor::MajorType::ByteString:
 			case bobl::cbor::MajorType::TextString:
 			{
-				auto len = bobl::cbor::utility::decode::lenght(begin, end);
-				if (len != bobl::cbor::utility::decode::IndefiniteLenght)
+				auto len = bobl::cbor::utility::decode::length(begin, end);
+				if (len != bobl::cbor::utility::decode::IndefiniteLength)
 				{
 					if (decltype(len)(std::distance(begin, end)) < len)
 						throw bobl::InputToShort(str(boost::format("not enought data to decode CBOR \"%1%\"") % to_string(type)));
@@ -235,7 +235,7 @@ public:
 				{
 					begin = std::find(begin, end, cbor::Break);
 					if(begin == end)
-						throw bobl::InvalidObject(str(boost::format("break is missing for indefinite lenght \"%1%\"") % to_string(type)));
+						throw bobl::InvalidObject(str(boost::format("break is missing for indefinite length \"%1%\"") % to_string(type)));
 				}
 				break;
 			}
@@ -258,13 +258,13 @@ public:
 	template<typename Iterator>
 	static void decode_array(Iterator& begin, Iterator end, bobl::flyweight::lite::Any<Iterator>(*value_decoder)(Iterator& begin, Iterator end))
 	{
-		decode_array(bobl::cbor::utility::decode::lenght(begin, end), begin, end, value_decoder);
+		decode_array(bobl::cbor::utility::decode::length(begin, end), begin, end, value_decoder);
 	}
 
 	template<typename Iterator>
 	static void decode_array(std::uint64_t len, Iterator& begin, Iterator end, bobl::flyweight::lite::Any<Iterator>(*value_decoder)(Iterator& begin, Iterator end))
 	{
-		if (len != bobl::cbor::utility::decode::IndefiniteLenght)
+		if (len != bobl::cbor::utility::decode::IndefiniteLength)
 		{
 			while (len--!=0)
 				(*value_decoder)(begin, end);
@@ -274,7 +274,7 @@ public:
 			for (;;)
 			{
 				if (begin == end)
-					throw bobl::InvalidObject(str(boost::format("not enough data provided to decode indefinite lenght CBOR \"%1%\"") % 
+					throw bobl::InvalidObject(str(boost::format("not enough data provided to decode indefinite length CBOR \"%1%\"") % 
 							(value_decoder== &Handler::decode_pair<Iterator> ? "dictionary" : "array")));
 				if (*begin == cbor::Break)
 					break;
@@ -629,14 +629,14 @@ public:
 	static T decode(Iterator& begin, Iterator end)
 	{
 		bobl::cbor::utility::decode::validate<MajorType::value>(begin, end);
-		auto len = bobl::cbor::utility::decode::lenght(begin, end);
+		auto len = bobl::cbor::utility::decode::length(begin, end);
 		auto res = bobl::utility::Decoder<T, ObjectDecoder<Iterator>, Options...>{}(begin, end);
 		if (len > boost::fusion::result_of::size<T>::value)
 		{
 			if /*constexpr*/ (bobl::utility::options::Contains<typename bobl::cbor::EffectiveOptions<T, Options...>::type, bobl::options::ExacMatch>::value)
 				throw bobl::InvalidObject{ "CBOR dictionary contains more objects than expected" };
 
-			if(len != bobl::cbor::utility::decode::IndefiniteLenght)
+			if(len != bobl::cbor::utility::decode::IndefiniteLength)
 				len-=boost::fusion::result_of::size<T>::value;
 
 			using AnyTypeHandler = Handler<bobl::flyweight::lite::Any<Iterator>, typename cbor::EffectiveOptions<T, Options...>::type >;
@@ -712,8 +712,8 @@ public:
 	static T decode(Iterator& begin, Iterator end)
 	{
 		bobl::cbor::utility::decode::validate<cbor::MajorType::Dictionary>(begin, end);
-		auto len = bobl::cbor::utility::decode::lenght(begin, end);
-		return  len != bobl::cbor::utility::decode::IndefiniteLenght
+		auto len = bobl::cbor::utility::decode::length(begin, end);
+		return  len != bobl::cbor::utility::decode::IndefiniteLength
 					? bobl::utility::DictionaryDecoder<T, bobl::cbor::decoder::details::DictionaryValueDecoder<Iterator>, Options...>{}(begin, end, Counter{ std::size_t(len) })
 					: bobl::utility::DictionaryDecoder<T, bobl::cbor::decoder::details::DictionaryValueDecoder<Iterator>, Options...>{}(begin, end, Break{});
 	}
