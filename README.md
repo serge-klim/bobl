@@ -5,8 +5,29 @@
 [![codecov](https://codecov.io/gh/serge-klim/bobl/branch/master/graph/badge.svg)](https://codecov.io/gh/serge-klim/bobl)
 
 
-Compile time coder/decoder generator, at the moment it supports basic [bson](http://bsonspec.org/spec.html) and [cbor](http://cbor.io/spec.html) encoding/decoding.
-Inspired by [Boost.Spirit](http://boost-spirit.com/home) and relays heavily on [Boost.Fusion](http://www.boost.org/doc/libs/1_66_0/libs/fusion/doc/html).
+This is an attempt to serialize/desirialize C++ types in well defined binary format, as simple as this:
+```	
+	namespace protocol = bobl::bson;
+	// auto value = Type{...};
+	std::vecor<std::uint8_t>  data = protocol::encode(value);
+	auto begin = cbegin(data);
+	Type value = protocol::decode<Type>(begin, cend(data));
+```
+As for now library supports basic [bson](http://bsonspec.org/spec.html) and [cbor](http://cbor.io/spec.html) encoding/decoding.
+
+### Requirements
+Library is header only library therefore no separately-compiled library binaries or special treatment required. However it's using following [boost](http://www.boost.org) libraries:
+
+ - [MPL](http://www.boost.org/doc/libs/1_66_0/libs/mpl/doc/index.html)
+ - [Fusion](http://www.boost.org/doc/libs/1_66_0/libs/fusion/doc/html/)
+ - [Uuid](https://www.boost.org/doc/libs/1_67_0/libs/uuid/doc/index.html)
+ - [Endian](https://www.boost.org/doc/libs/1_67_0/libs/endian/doc/index.html)
+ - [Range](https://www.boost.org/doc/libs/1_67_0/libs/range/doc/html/index.html) 
+ - [Format](https://www.boost.org/doc/libs/1_67_0/libs/format/)
+
+these are also header only libraries so just make sure that compiler can find them.
+
+C++11 compatible compiler (clang 3.6+, gcc 4.8.5+, msvc-14.1+).
 
 ### How it works:
 
@@ -15,7 +36,7 @@ lets say that there is encoded bson object:
 	//{'enabled': True, 'id': 100, 'name': 'the name', 'theEnum': 2}
 	//(55) : b'7\x00\x00\x00\x08enabled\x00\x01\x10id\x00d\x00\x00\x00\x02name\x00\t\x00\x00\x00the name\x00\x10theEnum\x00\x02\x00\x00\x00\x00'
 ```
-it can be decoded to std::tuple like this:
+it can be decoded into std::tuple like this:
 ```
     	std::tuple<bool, int, std::string, int> res = bobl::bson::decode<std::tuple<bool, int, std::string, int>>(begin, end);
 ```
@@ -39,7 +60,7 @@ CBOR complete example: [simple1.cpp](https://github.com/serge-klim/bobl/blob/mas
 	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
 	auto res = bobl::bson::decode<bool, int, std::string, TheEnumClass>(begin, end);
 ```
-using tuples for complex types might be not really good idea that's where [Boost.Fusion](https://www.boost.org/doc/libs/1_50_0/libs/fusion/doc/html/fusion/adapted/adapt_struct.html) can be very useful, it allows addapt structure to heterogenous container. So above could be decoded like this:
+using tuples for complex types might be not really good idea that's where [Boost.Fusion](https://www.boost.org/doc/libs/1_50_0/libs/fusion/doc/html/fusion/adapted/adapt_struct.html) can be very useful, it allows adapt structure to heterogeneous container. So above could be decoded like this:
 ```
 enum class TheEnumClass { None, One, Two, Three };
 
@@ -128,7 +149,7 @@ BSON complete example: [named\_tuple.cpp](https://github.com/serge-klim/bobl/blo
 CBOR complete example: [named\_tuple.cpp](https://github.com/serge-klim/bobl/blob/master/examples/cbor/named_tuple.cpp)
 
 
-the library could handle more compex types, for eg:
+the library could handle more complex types, for example:
 
 ```
 struct Extended
@@ -162,8 +183,22 @@ BOOST_FUSION_ADAPT_STRUCT(
 BSON complete example: [extended.cpp](https://github.com/serge-klim/bobl/blob/master/examples/bson/extended.cpp)  
 CBOR complete example: [extended.cpp](https://github.com/serge-klim/bobl/blob/master/examples/cbor/extended.cpp)
 
+#### Supported types
+
+ - [integers](#integers)
+ - [floating point](#floating-point)
+ - [enum and enum class](#enum-and-enum-class)
+ - [std::string](#stdstring)
+ - [std::vector](#stdvector)
+ - boost::uuid
+ - std::chrono::system_clock::time_point
+ - [boost::optional](#boostoptional)
+ - [boost::variant](#boostvariant)
+ - [Boost.Fusion adapted structures](#boostfusion-adapted-structures)
+
 #### Options.
-Encoding/decoding can be controlled by options. At the moment following options are defined in [options.hpp](https://github.com/serge-klim/bobl/blob/master/bobl/options.hpp):
+
+Options allows to controls encoding/decoding. Options are defined in [options.hpp](https://github.com/serge-klim/bobl/blob/master/bobl/options.hpp):
 ```
     struct RelaxedIntegers {};
     struct RelaxedFloats {};
@@ -174,9 +209,9 @@ Encoding/decoding can be controlled by options. At the moment following options 
     using IntegerOptimizeSize = RelaxedIntegers;
     template<typename T> struct HeterogeneousArray {};
     template<typename T> using NonUniformArray = HeterogeneousArray<T>;
-
+    struct OptionalAsNull{};
 ```
-This options can be used as explicitly set encode/decode functions template parameters and/or could be set per specific type by specializing bobl::EffectiveOptions structure:
+This options can be used as explicitly set encode/decode functions template parameters and/or could be set per specific type by specializing `bobl::EffectiveOptions` structure:
 ```
 	template<typename T, typename ...Options>
 	struct EffectiveOptions
@@ -184,7 +219,7 @@ This options can be used as explicitly set encode/decode functions template para
 		using type = bobl::Options<Options...>;
 	};
 ```
-for example to encode tuple as object using tuples element position as an object member name following specialization of bobl::EffectiveOptions structure can be used:
+for example to encode tuple as object using tuples element position as an object member name following specialization of `bobl::EffectiveOptions` structure can be used:
 
 ```
 namespace bobl{
@@ -195,7 +230,7 @@ namespace bobl{
 	};
 } //namespace bobl
 ```
-Also if such options has to be set for specific  protocol(BSON or CBOR) bobl::<protocol name> namespace can be used, following will set bobl::options::UsePositionAsName for tuples used with cbor encode/decode functions:
+Also if such options has to be set for specific protocol(BSON or CBOR) `bobl::<protocol name>` namespace can be used, following will set `bobl::options::UsePositionAsName` for tuples used with cbor encode/decode functions:
 
 ```
 namespace bobl{
@@ -209,18 +244,9 @@ namespace bobl{
 } //namespace bobl
 ```
 
-By default std::vector<std::uint8_t> encoded/decoded as byte string([CBOR](https://tools.ietf.org/html/rfc7049)  Major type 2) / binary data ([BSON](http://bsonspec.org/spec.html) - "\x05"). std::vector specialized with other types will be encoded as array type. bobl::option::ByteType allows to change this behavior. 
-
-```
-    std::vector<char> binary =  {100, 110, 120};
-	bobl::cbor::encode<bobl::Options<bobl::options::ByteType<char>>>(...)
-	// ...
-    std::vector<char> = bobl::cbor::decode<std::vector<char>, bobl::Options<bobl::options::ByteType<char>>>(begin, end);
-
-```
-#### Decode objects encoded by other libraries.
-
-By default encoded/decoded integer type based on its C++ type (not on its value size) which means that std::uint64_t containing value 1 will be encoded as [BSON](http://bsonspec.org/spec.html) - "\x12" (int64) type, it makes encoding/decoding bit faster. Using bobl::option::IntegerOptimizeSize option during encoding and bobl::option::RelaxedIntegers option during decoding allows change such behavior.
+##### Integers
+Any integer type for which `std::is_integral<T>::value` is true.
+By default encoded/decoded integer type based on its C++ type (not on its value size) which means that `std::uint64_t` containing value 1 will be encoded as [BSON](http://bsonspec.org/spec.html) - "\x12" (int64) type, it makes encoding/decoding bit faster. Using `bobl::option::IntegerOptimizeSize` option during encoding and `bobl::option::RelaxedIntegers` option during decoding allows change such behavior.
 
 ```
 	//{'int': 1}
@@ -232,17 +258,119 @@ By default encoded/decoded integer type based on its C++ type (not on its value 
 	std::tuple<std::uint64_t> res = bobl::bson::decode<std::uint64_t, bobl::Options<bobl::options::RelaxedIntegers>>(begin, end);
 	assert(std::get<0>(res) == 1);
 ```
-bobl::option::FloatOptimizeSize/bobl::option::RelaxedFloats works the same way for floating point types.
+##### Floating point
+Any floating point type for which `std::is_floating_point<T>::value` is true.
 
-[Boost.Fusion](https://www.boost.org/doc/libs/1_50_0/libs/fusion/doc/html/fusion/adapted/adapt_struct.html) adapted structures are encoded/decoded as bson/cbor objects, also called tables, dictionaries, hashes or maps of name-values pairs. By default member of structures decoded/encoded in they declaration order. It is possible to decode such objects encoded in different order if resulting C++ object is default constructible and bobl::options::StructAsDictionary option is specifyed. 
+##### Enums and enum class
+Enums end enum classes are encoded/decoded as underlying [integer type](#integers).
 
-Also decoding ignores extra object members at the end of object if bobl::options::StructAsDictionary option is not used. And any extra members if bobl::options::StructAsDictionary is used. This behavior allows, to certain point, extend protocols without breaking existing implementations. To suppress such behavior bobl::option::ExacMatch can be used. It makes decode throw bobl::InvalidObject exception if any extra object members found during decoding.
+##### std::string
+std::string encoded/decoded as raw UTF-8 string.
 
-#### enums and enum classes
-Are encoded/decoded as underlying integer type.
+##### std::vector
+`std::vector` can be used with any [supported types](#supported-types) and encoded/decoded as [bson](http://bsonspec.org/spec.html)/[cbor](http://cbor.io/spec.html) arrays. Except `std::vector<std::uint8_t>` which is encoded/decoded as byte string([CBOR](https://tools.ietf.org/html/rfc7049)  Major type 2) / binary data ([BSON](http://bsonspec.org/spec.html) - "\x05"). bobl::option::ByteType allows to encode/decode `std::vector` specialized with any other types(for which sizeof(T) is equal to `sizeof(std::uint8_t)`) as byte string. 
+
+```
+    std::vector<char> binary =  {100, 110, 120};
+	bobl::cbor::encode<bobl::Options<bobl::options::ByteType<char>>>(...)
+	// ...
+    std::vector<char> = bobl::cbor::decode<std::vector<char>, bobl::Options<bobl::options::ByteType<char>>>(begin, end);
+
+```
+#### boost::optional
+`boost::optional` can be used with any [supported types](#supported-types). By default encode skips std::optional to reduce size of encoded object which might leads to incorrect decoding. If decoded `std::tuple` with more than one type(encoded to same protocol specific type) following each other and at least one of these types is optional.
+Here is an example:
+```
+enum class Type { One, Two, Three };
+
+struct Data
+{
+	boost::optional<Type> type; //will be encoded as int
+	int id;
+};
+
+BOOST_FUSION_ADAPT_STRUCT(Data, type, id)
+
+	auto data  = Data { {}, 123};
+	std::vector<std::uint8_t> encoded =  bobl::bson::encode(data);
+    auto begin = encoded.data();
+	auto end = begin + encoded.size();
+```
+this will work as expected:
+```
+	auto decoded =  bobl::bson::decode<Data>(begin, end);	
+```
+this on the other hand will throw an exception:
+```
+	bobl::bson::decode<boost::optional<Type>, int>(begin, end);
+```
+Data structure with empty optional member type will be encoded as `{"id":123}` pseudo-json representation. Therefore decoding to unnamed tuple will fail because of integer 123 will be decoded as optional enum class type and required id needs value.  
+
+BSON complete example: [optional.cpp](https://github.com/serge-klim/bobl/blob/master/examples/bson/optional.cpp)  
+CBOR complete example: [optional.cpp](https://github.com/serge-klim/bobl/blob/master/examples/cbor/optional.cpp)
+
+if decoding in unnamed tuple is required `bobl::options::OptionalAsNull` can be used at encoding:
+```
+	auto data  = Data { {}, 123};
+	auto encoded =  bobl::bson::encode<bobl::options::OptionalAsNull>(data);
+```
+it will produce: `{type:null, "id":123}` pseudo-json representation. Which can be decoded in unnamed tuple just fine.
+
+```
+	auto res = bobl::bson::decode<boost::optional<Type>, int>(begin, end); // ok
+```
+
+#### boost::variant
+`boost::variant` can be used with any [supported types](#supported-types), except `boost::optional` which wouldn't make much sense.
+When decoded `boost::variant` decode try to decode types in order of declaration so if to types encoded as same type for example [integers](#integers) and [enums](#enum-and-enum-class) it will be decoded as first declared type.
+
+#### Boost.Fusion adapted structures
+
+[Boost.Fusion](https://www.boost.org/doc/libs/1_50_0/libs/fusion/doc/html/fusion/adapted/adapt_struct.html) adapted structures are encoded/decoded as bson/cbor objects, also called tables, dictionaries, hashes or maps of name-values pairs. By default member of structures decoded/encoded in they declaration order. It is possible to decode such objects encoded in different order if resulting C++ object is default constructible and `bobl::options::StructAsDictionary` option is specified. 
+
+Also decoding ignores extra object members at the end of object if `bobl::options::StructAsDictionary option` is not used. And any extra members if `bobl::options::StructAsDictionary` is used. This behavior allows, to certain point, extend protocols without breaking existing implementations. To suppress such behavior `bobl::option::ExacMatch` can be used. It makes decode throw bobl::InvalidObject exception if any extra object members found during decoding.
 
 
-### Requirements
- - c++11 suported compiler (clang 3.6+, gcc 4.8.5+, msvc-14.1+ )
- - [boost](http://www.boost.org) ([MPL](http://www.boost.org/doc/libs/1_66_0/libs/mpl/doc/index.html), [Fusion](http://www.boost.org/doc/libs/1_66_0/libs/fusion/doc/html/), [Uuid](https://www.boost.org/doc/libs/1_67_0/libs/uuid/doc/index.html), [Endian](https://www.boost.org/doc/libs/1_67_0/libs/endian/doc/index.html), [Range](https://www.boost.org/doc/libs/1_67_0/libs/range/doc/html/index.html), [Format](https://www.boost.org/doc/libs/1_67_0/libs/format/))
+#### Adapting types
 
+Type can be encoded/decode as another type by specializing `bobl::Adapter`
+```
+namespace bobl{ 
+	template<typename T, typename Enabled = boost::mpl::true_>
+	class Adapter {
+		using type = typename std::underlying_type<T>::type;
+		T operator()(type x) const;
+		type operator()(T const& x) const;
+
+	};
+
+} /*namespace bobl*/
+```
+or `bobl::bobl::Adapter`/`bobl::cbor::Adapter` if it should be protocol specific, for example:
+```
+	class X
+	{
+	public:
+		explicit X(int persistent) : persistent_{ persistent } {}
+		int persistent() const { return persistent_;}
+	private:
+		int persistent_;
+		int notso_ = 0;
+	};
+
+	namespace bobl { namespace bson {
+		template<>
+		class Adapter<X, boost::mpl::true_> 
+		{
+		public:
+			using type = int;
+			X operator()(int x) const { return X{ x }; }
+			int operator()(X const& x) const { return x.persistent(); }
+		};
+ 	} /*namespace bson*/ } /*namespace bobl*/
+
+```
+this will encode class X as an integer
+
+BSON complete example: [adapt.cpp](https://github.com/serge-klim/bobl/blob/master/examples/bson/adapt.cpp)  
+CBOR complete example: [adapt.cpp](https://github.com/serge-klim/bobl/blob/master/examples/cbor/adapt.cpp)
