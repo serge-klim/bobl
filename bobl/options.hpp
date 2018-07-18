@@ -1,6 +1,7 @@
 // Copyright (c) 2015-2018 Serge Klimov serge.klim@outlook.com
 
 #pragma once
+#include "bobl/utility/utils.hpp"
 #include <boost/fusion/algorithm/transformation/flatten.hpp>
 #include <boost/fusion/container/vector.hpp>
 #include <boost/fusion/mpl.hpp>
@@ -25,6 +26,7 @@ namespace options {
 	template<typename T> struct HeterogeneousArray {};
 	template<typename T> using NonUniformArray = HeterogeneousArray<T>;
 	struct OptionalAsNull {};
+	template<typename T> struct UseTypeName { static_assert(utility::IsVariant<T>::value, "valid only for variants"); };
 }// namespace options
 
 template<typename T, typename ...Options>

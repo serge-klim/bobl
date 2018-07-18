@@ -19,7 +19,7 @@
 
 namespace bobl{ namespace bson { namespace flyweight { 
 	
-template<typename T, typename Options> class NameValue;
+template<typename T, typename Options, typename Enabled = boost::mpl::true_> class NameValue;
 	
 namespace details{ 
 

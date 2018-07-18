@@ -33,8 +33,7 @@
 
 
 namespace bobl{ namespace bson { namespace flyweight{ 
-template<typename T, typename Options> class NameValue;
-	
+		
 namespace details{ 
 
 template<typename T, typename U = ObjectHeader>

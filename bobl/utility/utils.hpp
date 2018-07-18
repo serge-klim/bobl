@@ -22,5 +22,8 @@ struct MakeVariant<std::tuple<Params...>>
 template<typename T> struct IsOptional : std::false_type {};
 template<typename T> struct IsOptional<diversion::optional<T>> : std::true_type {};
 
+template<typename T> struct IsVariant : std::false_type {};
+template<typename ...Types> struct IsVariant<diversion::variant<Types...>> : std::true_type {};
+
 }/*namespace utility*/ } /*namespace bobl*/
 

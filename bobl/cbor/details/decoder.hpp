@@ -7,6 +7,7 @@
 #include "bobl/cbor/options.hpp"
 #include "bobl/cbor/adapter.hpp"
 #include "bobl/cbor/cbor.hpp"
+#include "bobl/utility/nvariant.hpp"
 #include "bobl/utility/timepoint.hpp"
 #include "bobl/utility/options.hpp"
 #include "bobl/utility/has_is.hpp"
@@ -21,6 +22,7 @@
 #include "bobl/bobl.hpp"
 #include <boost/fusion/include/size.hpp>
 #include <boost/fusion/support/is_sequence.hpp>
+#include <boost/mpl/remove.hpp>
 #include <boost/mpl/and.hpp>
 #include <boost/mpl/not.hpp>
 #include <boost/mpl/bool_fwd.hpp>
@@ -392,7 +394,7 @@ public:
 	using type = Handler<Type, typename cbor::EffectiveOptions<T, Options>::type>;
 };
 
-template<typename T, typename Options/*, typename Enabled = boost::mpl::true_*/>
+template<typename T, typename Options, typename Enabled = boost::mpl::true_>
 class NameValue
 {
 	NameValue(Name&& name, T&& value) : name_{ std::move(name) }, value_(std::move(value)) {}
@@ -419,8 +421,8 @@ private:
 	T value_;
 };
 
-template<typename T, typename Options/*, typename Enabled = boost::mpl::true_*/>
-class NameValue<diversion::optional<T>, Options>
+template<typename T, typename Options>
+class NameValue<diversion::optional<T>, Options, boost::mpl::true_>
 {	
 	using Decoder = typename Decoder<T, Options>::type;
 	NameValue() : name_{ std::string{} }, value_{ diversion::nullopt }{}
@@ -507,7 +509,7 @@ private:
 };
 
 template<typename T, typename Options>
-class NameValue<bobl::flyweight::NameValue<T>, Options> : public NameValue<T, Options>
+class NameValue<bobl::flyweight::NameValue<T>, Options, boost::mpl::true_> : public NameValue<T, Options>
 {
 	using Base = NameValue<T, Options>;
 	NameValue(Base&& base) : Base{ std::move(base) } {}
@@ -519,10 +521,12 @@ public:
 };
 
 template<typename ...Types, typename Options>
-class NameValue<diversion::variant<bobl::UseTypeName, Types...>, Options> /*: public NameValue<T, Options>*/
+class NameValue<diversion::variant<Types...>, Options, typename bobl::utility::VariantUseTypeName<diversion::variant<Types...>,
+																				typename bobl::cbor::EffectiveOptions<diversion::variant<Types...>, Options>::type>::type>
 {
-	static_assert(sizeof...(Types) != 0, "variant<bobl::UseTypeName> doesn't make much sense");
-	using Value = diversion::variant<bobl::UseTypeName, Types...>;
+	using TypesTuple = typename boost::mpl::remove<std::tuple<Types...>, bobl::UseTypeName>::type;
+	static_assert(std::tuple_size<TypesTuple>::value != 0, "variant<bobl::UseTypeName> or variant<> doesn't make much sense");
+	using Value = diversion::variant<Types...>;
 	NameValue(Value&& value) : value_{ std::move(value) } {}
 public:
 	Value value() const& { return value_; }
@@ -538,9 +542,10 @@ public:
 private:
 private:
 	template<std::size_t N, typename Iterator>
-	static auto decode_as(Name const& name, Iterator& begin, Iterator end) -> typename std::enable_if<sizeof...(Types) != N, NameValue>::type
+	static auto decode_as(Name const& name, Iterator& begin, Iterator end) 
+		-> typename std::enable_if<std::tuple_size<TypesTuple>::value != N, NameValue>::type
 	{
-		using Type = typename std::tuple_element<N, std::tuple<Types...>>::type;
+		using Type = typename std::tuple_element<N, TypesTuple>::type;
 		using Decoder = typename Decoder<Type, Options>::type;
 		return name().compare(bobl::TypeName<Type>{}()) == 0
 								? NameValue{ Decoder::decode(begin, end) }
@@ -548,7 +553,8 @@ private:
 	}
 
 	template<std::size_t N, typename Iterator>
-	static auto decode_as(Name const& name, Iterator& /*begin*/, Iterator /*end*/) -> typename std::enable_if<sizeof...(Types) == N, NameValue>::type
+	static auto decode_as(Name const& name, Iterator& /*begin*/, Iterator /*end*/)
+		-> typename std::enable_if<std::tuple_size<TypesTuple>::value == N, NameValue>::type
 	{
 		throw bobl::IncorrectObjectName{ str(boost::format("unexpected CBOR object name : \"%1%\".") % name()) };
 	}
@@ -557,10 +563,10 @@ private:
 };
 
 template<typename ...Types, typename Options>
-class Handler<diversion::variant<bobl::UseTypeName, Types...>, Options, boost::mpl::true_>
+class Handler<diversion::variant<Types...>, Options, typename bobl::utility::VariantUseTypeName<diversion::variant<Types...>,
+															typename bobl::cbor::EffectiveOptions<diversion::variant<Types...>, Options>::type>::type>
 {
-	static_assert(sizeof...(Types) != 0, "variant<bobl::UseTypeName> doesn't make much sense");
-	using Value = diversion::variant<bobl::UseTypeName, Types...>;
+	using Value = diversion::variant<Types...>;
 public:
 	template<typename Iterator>
 	static Value decode(Iterator& begin, Iterator end) { return NameValue<Value, Options>::decode(begin, end).value(); }
@@ -759,7 +765,8 @@ private:
 };
 
 template<typename ...Params, typename Options>
-class Handler<diversion::variant<Params...>, Options, boost::mpl::true_>
+class Handler<diversion::variant<Params...>, Options, typename boost::mpl::not_<typename bobl::utility::VariantUseTypeName<diversion::variant<Params...>,
+																						typename bobl::cbor::EffectiveOptions<diversion::variant<Params...>, Options>::type>>::type>
 {
 	static_assert(sizeof...(Params) != 0, "there is no much sense to parse empty variant");
 	using ValueType = diversion::variant<Params...>;

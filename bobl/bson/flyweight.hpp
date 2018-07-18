@@ -7,11 +7,13 @@
 #include "bobl/bson/adapter.hpp"
 #include "bobl/options.hpp"
 #include "bobl/utility/any.hpp"
+#include "bobl/utility/nvariant.hpp"
 #include "bobl/utility/parameters.hpp"
 #include "bobl/utility/adapter.hpp"
 #include "bobl/utility/diversion.hpp"
 #include "bobl/utility/names.hpp"
 #include "bobl/names.hpp"
+#include <boost/mpl/remove.hpp>
 #include <boost/mpl/bool_fwd.hpp>
 #include <boost/range/iterator_range.hpp>
 #include <boost/endian/conversion.hpp>
@@ -36,7 +38,7 @@ private:
     std::uint32_t const* size_;
 };
 
-template<typename T, typename Options>
+template<typename T, typename Options, typename Enabled>
 class NameValue 
 {
 	using Value = typename details::EffectiveValueHandler<T, Options>::type;
@@ -54,7 +56,7 @@ private:
 };
 
 template<typename T, typename Options>
-class NameValue<diversion::optional<T>, Options>
+class NameValue<diversion::optional<T>, Options, boost::mpl::true_>
 {
 	using Value = typename details::EffectiveValueHandler<T, Options>::type;
 	NameValue(diversion::optional<Value>&& value) : value_{ std::move(value) } {}
@@ -119,7 +121,7 @@ private:
 };
 
 template<typename T, typename Options>
-class NameValue<bobl::flyweight::NameValue<T>, Options> : public NameValue<T, Options>
+class NameValue<bobl::flyweight::NameValue<T>, Options, boost::mpl::true_> : public NameValue<T, Options>
 {
 	using Base = NameValue<T, Options>;
 	NameValue(Base&& base) : Base{ std::move(base) } {}
@@ -131,12 +133,14 @@ public:
 };
 
 template<typename ...Types, typename Options>
-class NameValue<diversion::variant<bobl::UseTypeName, Types...>, Options>
+class NameValue<diversion::variant<Types...>, Options, typename bobl::utility::VariantUseTypeName<diversion::variant<Types...>, 
+																	typename bobl::bson::EffectiveOptions<diversion::variant<Types...>, Options>::type>::type>
 {
-	static_assert(sizeof...(Types) != 0, "variant<bobl::UseTypeName> doesn't make much sense");
-	using Value = diversion::variant<bobl::UseTypeName, Types...>;
-	using TypesTuple = typename boost::mpl::transform<std::tuple<Types...>, details::EffectiveValueHandler<boost::mpl::placeholders::_1, Options>>::type;
-	using ValueHandler = typename bobl::utility::MakeVariant<TypesTuple>::type;
+	using Value = diversion::variant<Types...>;
+	using TypesTuple = typename boost::mpl::remove<std::tuple<Types...>, bobl::UseTypeName>::type;
+	static_assert(std::tuple_size<TypesTuple>::value != 0, "variant<bobl::UseTypeName> or variant<> doesn't make much sense");
+	using HandlersTuple = typename boost::mpl::transform<TypesTuple, details::EffectiveValueHandler<boost::mpl::placeholders::_1, Options>>::type;
+	using ValueHandler = typename bobl::utility::MakeVariant<HandlersTuple>::type;
 
 	struct ValueVisitor : public boost::static_visitor<Value>
 	{
@@ -152,13 +156,30 @@ class NameValue<diversion::variant<bobl::UseTypeName, Types...>, Options>
 public:
 	diversion::string_view name() const { return diversion::visit(NameVisitor{}, handler_);}
 	Value value() const { return diversion::visit(ValueVisitor{}, handler_); }
-	template<typename NameType>
-	static NameValue decode(bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end, NameType const& /*ename*/);
+	template<typename NameType /*= bobl::utility::ObjectNameIrrelevant*/>
+	static NameValue decode(bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end, NameType const& /*ename*/)
+	{
+		auto header = bobl::bson::flyweight::details::ObjectHeader{ begin, end };
+		return decode_as<0>(std::move(header), begin, end);
+	}
 private:
 	template<std::size_t N>
-	static auto decode_as(details::ObjectHeader&& header, bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end) -> typename std::enable_if<sizeof...(Types) != N, NameValue>::type;
+	static auto decode_as(details::ObjectHeader&& header, bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end) 
+		-> typename std::enable_if<std::tuple_size<TypesTuple>::value != N, NameValue>::type
+	{
+		using Type = typename std::tuple_element<N, TypesTuple>::type;
+		using Handler = typename details::EffectiveValueHandler<Type, Options>::type;
+		return header.name().compare(bobl::TypeName<Type>{}()) == 0
+			? NameValue{ ValueHandler{ Handler::decode(std::move(header), begin, end) } }
+		: decode_as<N + 1>(std::move(header), begin, end);
+	}
+
 	template<std::size_t N>
-	static auto decode_as(details::ObjectHeader&& header, bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end) -> typename std::enable_if<sizeof...(Types) == N, NameValue>::type;
+	static auto decode_as(details::ObjectHeader&& header, bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end) 
+		-> typename std::enable_if<std::tuple_size<TypesTuple>::value == N, NameValue>::type
+	{
+		throw bobl::IncorrectObjectName{ str(boost::format("unexpected BSON object name : \"%1%\".") % header.name()) };
+	}
 private:
 	ValueHandler handler_;
 };
@@ -200,9 +221,9 @@ auto bobl::bson::cast(bobl::bson::flyweight::Document const& document) -> typena
 }
 
 
-template<typename T, typename Options>
+template<typename T, typename Options, typename Enabled>
 template<typename ExpectedName /*= bobl::utility::ObjectNameIrrelevant*/>
-bobl::bson::flyweight::NameValue<T, Options> bobl::bson::flyweight::NameValue<T, Options>::decode(bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end, ExpectedName const& ename /*= bobl::utility::ObjectNameIrrelevant{}*/)
+bobl::bson::flyweight::NameValue<T, Options, Enabled> bobl::bson::flyweight::NameValue<T, Options, Enabled>::decode(bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end, ExpectedName const& ename /*= bobl::utility::ObjectNameIrrelevant{}*/)
 {
 	auto header = bobl::bson::flyweight::details::ObjectHeader{ begin, end };
 	if (!ename.compare(header.name()))
@@ -211,31 +232,3 @@ bobl::bson::flyweight::NameValue<T, Options> bobl::bson::flyweight::NameValue<T,
 }
 
 
-template<typename ...Types, typename Options>
-template<typename NameType /*= bobl::utility::ObjectNameIrrelevant*/>
-bobl::bson::flyweight::NameValue<diversion::variant<bobl::UseTypeName, Types...>, Options>
-	bobl::bson::flyweight::NameValue<diversion::variant<bobl::UseTypeName, Types...>, Options>::decode(bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end, NameType const& /*ename*/ /*= bobl::utility::ObjectNameIrrelevant{}*/)
-{
-	auto header = bobl::bson::flyweight::details::ObjectHeader{ begin, end };
-	return decode_as<0>(std::move(header), begin, end);
-}
-
-template<typename ...Types, typename Options>
-template<std::size_t N>
-auto bobl::bson::flyweight::NameValue<diversion::variant<bobl::UseTypeName, Types...>, Options>::decode_as(bobl::bson::flyweight::details::ObjectHeader&& header, bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end)
-				-> typename std::enable_if<sizeof...(Types) != N, NameValue>::type
-{
-	using Type = typename std::tuple_element<N, std::tuple<Types...>>::type;
-	using Handler = typename details::EffectiveValueHandler<Type, Options>::type;
-	return header.name().compare(bobl::TypeName<Type>{}()) == 0
-				? NameValue{ ValueHandler{ Handler::decode(std::move(header), begin, end) } }
-				: decode_as<N+1>(std::move(header), begin, end);
-}
-
-template<typename ...Types, typename Options>
-template<std::size_t N>
-auto bobl::bson::flyweight::NameValue<diversion::variant<bobl::UseTypeName, Types...>, Options>::decode_as(bobl::bson::flyweight::details::ObjectHeader&& header, bobl::bson::flyweight::Iterator& /*begin*/, bobl::bson::flyweight::Iterator /*end*/)
-				-> typename std::enable_if<sizeof...(Types) == N, NameValue>::type
-{
-	throw bobl::IncorrectObjectName{ str(boost::format("unexpected BSON object name : \"%1%\".") % header.name() ) };
-}

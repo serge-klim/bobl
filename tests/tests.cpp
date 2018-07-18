@@ -1,7 +1,7 @@
 #define BOOST_TEST_MODULE BOBLTests
 
 #include "tests.hpp"
-//#include "bobl/any.hpp"
+#include "bobl/utility/nvariant.hpp"
 #include "bobl/bson/details/options.hpp"
 #include "bobl/cbor/details/options.hpp"
 #include "bobl/json/details/options.hpp"
@@ -149,7 +149,16 @@ void named_sequence_compiletime_test()
 							bobl::utility::ObjectNameIrrelevant
 					>::value, "name type is expected");	
 
-	static_assert(bobl::utility::NamedSequence<SimpleTuple, bobl::options::None>::value, "not supposed to be named sequence");
+	static_assert(bobl::utility::NamedSequence<SimpleTuple, bobl::options::None>::value, "supposed to be named sequence");
+
+
+	static_assert(!bobl::utility::NamedSequence<std::tuple<diversion::variant<int, Simple>>, bobl::options::None>::value, "not supposed to be named sequence");
+	static_assert(bobl::utility::NamedSequence<std::tuple<diversion::variant<int, Simple>>, bobl::options::UseTypeName<diversion::variant<int, Simple>>>::value, 
+						"bobl::options::UseTypeName<> seems not working");
+
+	static_assert(bobl::utility::NamedSequence<std::tuple<diversion::variant<bobl::UseTypeName, int, Simple>>, bobl::options::None>::value, "diversion::variant<bobl::UseTypeName, ...> seems not working");
+	static_assert(bobl::utility::NamedSequence<std::tuple<diversion::variant<int, bobl::UseTypeName, Simple>>, bobl::options::None>::value, "diversion::variant< ... , bobl::UseTypeName, ...> seems not working");
+	static_assert(bobl::utility::NamedSequence<std::tuple<diversion::variant<int, Simple, bobl::UseTypeName>>, bobl::options::None>::value, "diversion::variant< ..., bobl::UseTypeName> seems not working");
 }
 
 BOOST_AUTO_TEST_CASE(MemberNameTest)
@@ -202,6 +211,21 @@ void map_decoder_compiletime_test()
 BOOST_AUTO_TEST_CASE(MapDecoderTest)
 {
 	map_decoder_compiletime_test();
+}
+
+void variant_use_type_name_compiletime_test()
+{
+	static_assert(!bobl::utility::VariantUseTypeName<int, bobl::options::None>::value, "bobl::utility::VariantUseTypeName seems broken");
+	static_assert(!bobl::utility::VariantUseTypeName<int, bobl::options::UseTypeName<int>>::value, "bobl::utility::VariantUseTypeName seems broken");
+	static_assert(!bobl::utility::VariantUseTypeName<diversion::variant<int, float>, bobl::options::None>::value, "bobl::utility::VariantUseTypeName seems broken");
+	static_assert(bobl::utility::VariantUseTypeName<diversion::variant<int, float, bobl::UseTypeName>, bobl::options::None>::value, "bobl::utility::VariantUseTypeName seems broken");
+	static_assert(bobl::utility::VariantUseTypeName<diversion::variant<int, float>, bobl::options::UseTypeName<diversion::variant<int, float>>>::value, "bobl::utility::VariantUseTypeName seems broken");
+	static_assert(bobl::utility::VariantUseTypeName<diversion::variant<int, float, bobl::UseTypeName>, bobl::options::UseTypeName<diversion::variant<int, float>>>::value, "bobl::utility::VariantUseTypeName seems broken");
+}
+
+BOOST_AUTO_TEST_CASE(VariantUseTypeNameCompileTimeTest)
+{
+	variant_use_type_name_compiletime_test();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

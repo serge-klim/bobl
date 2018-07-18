@@ -22,7 +22,8 @@ Library is header only library therefore no separately-compiled library binaries
  - [Fusion](http://www.boost.org/doc/libs/1_66_0/libs/fusion/doc/html/)
  - [Uuid](https://www.boost.org/doc/libs/1_67_0/libs/uuid/doc/index.html)
  - [Endian](https://www.boost.org/doc/libs/1_67_0/libs/endian/doc/index.html)
- - [Range](https://www.boost.org/doc/libs/1_67_0/libs/range/doc/html/index.html) 
+ - [Range](https://www.boost.org/doc/libs/1_67_0/libs/range/doc/html/index.html)
+ - [TypeIndex](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_typeindex.html)
  - [Format](https://www.boost.org/doc/libs/1_67_0/libs/format/)
 
 these are also header only libraries so just make sure that compiler can find them.
@@ -93,14 +94,11 @@ CBOR complete example: [simple3.cpp](https://github.com/serge-klim/bobl/blob/mas
 std::tuple also can be encoded, but BSON requires names for objects. In case of adapted structures, member name became appropriate object name. With tuples some naming needed, to solve it there is few options:
 1. position of tuple element can be used as an element name:
 ```
-    auto value = std::make_tuple(true, 100, std::string{ "the name" }, TheEnumClass::Two);
+	auto value = std::make_tuple(true, 100, std::string{ "the name" }, TheEnumClass::Two);
 	auto data = bobl::bson::encode<bobl::options::UsePositionAsName>(value);
 ```
-The resulting object will look like this (pseudo-json representation):
-```
-	{'_0': True, '_1': 100, '_2': 'the name', '_3': 2}
-``` 
-2. another way to name tupple element is specialize MemberName class:
+The resulting object will look like this `{"_0": True, "_1": 100, "_2": "the name", "_3": 2}` pseudo-json representation.  
+2. another way to name tupple element is specialize `bobl::MemberName` class declared in [`bobl/names.hpp`](https://github.com/serge-klim/bobl/blob/master/bobl/names.hpp) header :
 ```
 #include "bobl/names.hpp"
 
@@ -177,7 +175,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 	binary,
 	tp)
 
-    auto extended = Extended{};
+	auto extended = Extended{};
 	std::vector<std::uint8_t> encoded =  bobl::bson::encode(extended)
 ```
 BSON complete example: [extended.cpp](https://github.com/serge-klim/bobl/blob/master/examples/bson/extended.cpp)  
@@ -210,6 +208,7 @@ Options allows to controls encoding/decoding. Options are defined in [options.hp
     template<typename T> struct HeterogeneousArray {};
     template<typename T> using NonUniformArray = HeterogeneousArray<T>;
     struct OptionalAsNull{};
+    template<typename T> struct UseTypeName{};
 ```
 This options can be used as explicitly set encode/decode functions template parameters and/or could be set per specific type by specializing `bobl::EffectiveOptions` structure:
 ```
@@ -223,11 +222,11 @@ for example to encode tuple as object using tuples element position as an object
 
 ```
 namespace bobl{
-	template<typename ...Types, typename ...Options>
-	struct EffectiveOptions<std::tuple<Types...>, Options...>
-	{   
-		using type = bobl::Options<bobl::options::UsePositionAsName, Options...>;
-	};
+   template<typename ...Types, typename ...Options>
+   struct EffectiveOptions<std::tuple<Types...>, Options...>
+   {   
+	   using type = bobl::Options<bobl::options::UsePositionAsName, Options...>;
+   };
 } //namespace bobl
 ```
 Also if such options has to be set for specific protocol(BSON or CBOR) `bobl::<protocol name>` namespace can be used, following will set `bobl::options::UsePositionAsName` for tuples used with cbor encode/decode functions:
@@ -261,7 +260,7 @@ By default encoded/decoded integer type based on its C++ type (not on its value 
 ##### Floating point
 Any floating point type for which `std::is_floating_point<T>::value` is true.
 
-##### Enums and enum class
+##### Enum and enum class
 Enums end enum classes are encoded/decoded as underlying [integer type](#integers).
 
 ##### std::string
@@ -272,7 +271,7 @@ std::string encoded/decoded as raw UTF-8 string.
 
 ```
     std::vector<char> binary =  {100, 110, 120};
-	bobl::cbor::encode<bobl::Options<bobl::options::ByteType<char>>>(...)
+    bobl::cbor::encode<bobl::Options<bobl::options::ByteType<char>>>(...)
 	// ...
     std::vector<char> = bobl::cbor::decode<std::vector<char>, bobl::Options<bobl::options::ByteType<char>>>(begin, end);
 
@@ -293,7 +292,7 @@ BOOST_FUSION_ADAPT_STRUCT(Data, type, id)
 
 	auto data  = Data { {}, 123};
 	std::vector<std::uint8_t> encoded =  bobl::bson::encode(data);
-    auto begin = encoded.data();
+	auto begin = encoded.data();
 	auto end = begin + encoded.size();
 ```
 this will work as expected:
@@ -314,7 +313,7 @@ if decoding in unnamed tuple is required `bobl::options::OptionalAsNull` can be 
 	auto data  = Data { {}, 123};
 	auto encoded =  bobl::bson::encode<bobl::options::OptionalAsNull>(data);
 ```
-it will produce: `{type:null, "id":123}` pseudo-json representation. Which can be decoded in unnamed tuple just fine.
+it will produce: `{"type":null, "id":123}` pseudo-json representation. Which can be decoded in unnamed tuple just fine.
 
 ```
 	auto res = bobl::bson::decode<boost::optional<Type>, int>(begin, end); // ok
@@ -322,7 +321,27 @@ it will produce: `{type:null, "id":123}` pseudo-json representation. Which can b
 
 #### boost::variant
 `boost::variant` can be used with any [supported types](#supported-types), except `boost::optional` which wouldn't make much sense.
-When decoded `boost::variant` decode try to decode types in order of declaration so if to types encoded as same type for example [integers](#integers) and [enums](#enum-and-enum-class) it will be decoded as first declared type.
+When decoded `boost::variant` decode try to decode types in order of declaration. So if two types encoded as same type for example [integers](#integers) and [enums](#enum-and-enum-class) it will be decoded as first declared type.
+
+for complex similar types probing to decode over each variant type might be sub optimal. To avoid it `bobl::options::UseTypeName<>` can be used. It makes encoder overrides member name with type-name which allows to decode faster and avoid similar types issue described above.  
+For example:
+
+```
+	auto value =boost::variant<int, Enum>{100};
+	auto data = bobl::bson::encode<bobl::Options<bobl::options::UseTypeName<boost::variant<int, Enum>>>>(value);
+```
+
+It will be encoded as `{"int":123}` pseudo-json representation. Type name ("int" in this case) is compiler dependant and generated with `boost::typeindex::type_id<T>().pretty_name()` to customize type-name `bobl::TypeName` class declared in [`bobl/names.hpp`](https://github.com/serge-klim/bobl/blob/master/bobl/names.hpp) header can be specialized.
+
+
+If using `bobl::options::UseTypeName<>` is to verbose, the same effect can be achieved  by adding bobl::UseTypeName tag to list of variant types, like this:
+```
+	auto value = boost::variant<int, Enum, bobl::UseTypeName> {100};
+	auto data = bobl::bson::encode(value);
+```
+
+BSON complete example: [variant.cpp](https://github.com/serge-klim/bobl/blob/master/examples/bson/nvariant.cpp)  
+CBOR complete example: [variant.cpp](https://github.com/serge-klim/bobl/blob/master/examples/cbor/nvariant.cpp)
 
 #### Boost.Fusion adapted structures
 

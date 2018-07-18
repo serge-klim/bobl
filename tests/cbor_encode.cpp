@@ -414,6 +414,40 @@ BOOST_AUTO_TEST_CASE(NamedVariantTest)
 	BOOST_CHECK_EQUAL(int(simple.theEnum), 2);
 }
 
+BOOST_AUTO_TEST_CASE(NamedVariantPositionTest)
+{
+	using NamedVariant1 = diversion::variant<bobl::UseTypeName, Simple, Extended>;
+	auto value = Simple{ true, 100, "the name", Two };
+	auto data = bobl::cbor::encode(NamedVariant1{ value });
+	uint8_t const* begin = data.data();
+	uint8_t const* end = begin + data.size();
+	using NamedVariant2 = diversion::variant<Simple, bobl::UseTypeName, Extended>;
+	auto variant = bobl::cbor::decode<NamedVariant2>(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
+
+	auto simple = boost::get<Simple>(variant);
+	BOOST_CHECK(simple.enabled);
+	BOOST_CHECK_EQUAL(simple.id, 100);
+	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
+	BOOST_CHECK_EQUAL(int(simple.theEnum), 2);
+}
+
+BOOST_AUTO_TEST_CASE(NamedVariantOptionsTest)
+{
+	using NamedVariant = diversion::variant<Simple, Extended>;
+	auto value = Simple{ true, 100, "the name", Two };
+	auto data = bobl::cbor::encode<bobl::Options<bobl::options::UseTypeName<NamedVariant>>>(NamedVariant{ value });
+	uint8_t const* begin = data.data();
+	uint8_t const* end = begin + data.size();
+	auto variant = bobl::cbor::decode<NamedVariant, bobl::Options<bobl::options::UseTypeName<NamedVariant>>>(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
+	auto simple = boost::get<Simple>(variant);
+	BOOST_CHECK(simple.enabled);
+	BOOST_CHECK_EQUAL(simple.id, 100);
+	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
+	BOOST_CHECK_EQUAL(int(simple.theEnum), 2);
+}
+
 BOOST_AUTO_TEST_CASE(NamedVariantAsVariantTest)
 {
 	auto value = NamedVariant{ Simple{ true, 100, "the name", Two }, 301 };

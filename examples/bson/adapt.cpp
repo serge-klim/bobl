@@ -8,6 +8,8 @@ class X
 public:
 	explicit X(int persistent) : persistent_{ persistent } {}
 	int persistent() const { return persistent_;}
+	int not_persistent() const { return notso_;}
+	void not_persistent(int val) { notso_ = val;}
 private:
 	int persistent_;
 	int notso_ = 0;

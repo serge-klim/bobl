@@ -10,3 +10,4 @@ exe named_tuple : named_tuple.cpp ;
 exe extended : extended.cpp ;
 exe optional : optional.cpp ;
 exe adapt : adapt.cpp ;
+exe nvariant : nvariant.cpp ;

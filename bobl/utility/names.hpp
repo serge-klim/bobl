@@ -1,6 +1,7 @@
 // Copyright (c) 2015-2018 Serge Klimov serge.klim@outlook.com
 
 #pragma once
+#include "bobl/utility/nvariant.hpp"
 #include "bobl/utility/diversion.hpp"
 #include "bobl/bobl.hpp"
 #include <boost/format.hpp>
@@ -37,22 +38,16 @@ struct PositionAsName
 	}
 };
 
-template<typename T>
-struct UseTypeName{};
-
-template<typename ...Types>
-struct UseTypeName <diversion::variant<bobl::UseTypeName, Types...>> 
-{
-	constexpr char const* operator()() const { return "_"; }
-};
-
-
 } /*namespace details*/
 
 template<typename T, typename MemberType, std::size_t Position, typename Options>
 class DefaultMemberName
 {
-	using CheckUseTypeName = details::UseTypeName<MemberType>;
+	struct NoName {};
+
+	struct VariantUseTypeName { constexpr char const* operator()() const { return "_"; } };
+
+	using CheckUseTypeName = typename std::conditional<bobl::utility::VariantUseTypeName<MemberType, Options>::value, VariantUseTypeName, NoName>::type;
 
 	using CheckOptions = typename std::conditional<bobl::utility::options::Contains<Options, bobl::options::UsePositionAsName>::value,
 															details::PositionAsName<T, MemberType, Position>,

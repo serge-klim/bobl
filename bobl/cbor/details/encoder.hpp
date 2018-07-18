@@ -6,6 +6,7 @@
 #include "bobl/cbor/adapter.hpp"
 #include "bobl/cbor/cbor.hpp"
 #include "bobl/utility/type_name.hpp"
+#include "bobl/utility/nvariant.hpp"
 #include "bobl/utility/timepoint.hpp"
 #include "bobl/utility/options.hpp"
 #include "bobl/utility/float.hpp"
@@ -229,9 +230,11 @@ private:
 	}
 
 	template<typename ...Types, typename Iterator>
-	static Iterator encode(Iterator out, diversion::string_view /*name*/, diversion::variant<bobl::UseTypeName, Types...> const& value)
+	static auto encode(Iterator out, diversion::string_view /*name*/, diversion::variant<Types...> const& value)
+		-> typename std::enable_if<bobl::utility::VariantUseTypeName<diversion::variant<Types...>,
+										typename bobl::cbor::EffectiveOptions<diversion::variant<Types...>, Options>::type>::value, Iterator>::type
 	{
-		return details::encode<Options, Iterator, diversion::variant<bobl::UseTypeName, Types...>>(out, value);
+		return details::encode<Options, Iterator, diversion::variant<Types...>>(out, value);
 	}
 };
 
@@ -303,31 +306,20 @@ class Handler<diversion::variant<Types...>, Options, boost::mpl::true_>
 	private:
 		Iterator out;
 	};
-public:
-	template<typename Iterator>
-	static Iterator encode(Iterator out, diversion::variant<Types...> const& value)
-	{
-		return diversion::visit(ValueVisitor<Iterator>{ std::move(out) }, value);
-	}
-};
 
-template<typename ...Types, typename Options>
-class Handler<diversion::variant<bobl::UseTypeName, Types...>, Options, boost::mpl::true_>
-{
-	static_assert(sizeof...(Types)!=0, "variant<bobl::UseTypeName> doesn't make much sense");
 	template<typename Iterator>
-	struct ValueVisitor : public boost::static_visitor<Iterator>
+	struct NamedValueVisitor : public boost::static_visitor<Iterator>
 	{
-		ValueVisitor(Iterator out) : out_{ std::move(out) } {}
-		Iterator operator()(bobl::UseTypeName const&) const 
-		{ 
+		NamedValueVisitor(Iterator out) : out_{ std::move(out) } {}
+		Iterator operator()(bobl::UseTypeName const&) const
+		{
 			auto param_list = bobl::utility::type_name<Types...>();
 			throw bobl::InvalidObject{ str(boost::format("can't encode variant<bobl::UseTypeName, %1%> with no value in it") % param_list) };
 		}
 		template<typename T>
 		Iterator operator()(T const& value) const
 		{
-			std::string const& name = bobl::TypeName<decltype(value)>{}();
+			std::string const& name = bobl::TypeName<T>{}();
 			Iterator out = details::encode<bobl::options::None, Iterator, std::string>(std::move(out_), name);
 			return details::encode<Options, Iterator, T>(std::move(out), value);
 		}
@@ -336,9 +328,13 @@ class Handler<diversion::variant<bobl::UseTypeName, Types...>, Options, boost::m
 	};
 public:
 	template<typename Iterator>
-	static Iterator encode(Iterator out, diversion::variant<bobl::UseTypeName, Types...> const& value)
+	static Iterator encode(Iterator out, diversion::variant<Types...> const& value)
 	{
-		return diversion::visit(ValueVisitor<Iterator>{ std::move(out) }, value);
+		using Visitor = typename std::conditional<bobl::utility::VariantUseTypeName<diversion::variant<Types...>,
+											typename bobl::cbor::EffectiveOptions<diversion::variant<Types...>, Options>::type>::value,
+											NamedValueVisitor<Iterator>,
+											ValueVisitor<Iterator>>::type;
+		return diversion::visit(Visitor{ std::move(out) }, value);
 	}
 };
 
