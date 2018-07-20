@@ -221,11 +221,36 @@ T string(Iterator& begin, Iterator end)
 
 namespace utility { namespace encode {
 
+namespace workaround
+{
+template<typename T, size_t SizeOf = sizeof(T)> struct ResolveAmbiguity { using type = T; };
+template<typename T> struct ResolveAmbiguity<T, sizeof(std::uint8_t)>
+{
+	using type = typename std::conditional<std::is_signed<T>::value, std::int8_t, std::uint8_t>::type;
+};
+
+template<typename T> struct ResolveAmbiguity<T, sizeof(std::uint16_t)>
+{
+	using type = typename std::conditional<std::is_signed<T>::value, std::int16_t, std::uint16_t>::type;
+};
+
+template<typename T> struct ResolveAmbiguity<T, sizeof(std::uint32_t)>
+{
+	using type = typename std::conditional<std::is_signed<T>::value, std::int32_t, std::uint32_t>::type;
+};
+
+template<typename T> struct ResolveAmbiguity<T, sizeof(std::uint64_t)> 
+{ 
+	using type = typename std::conditional<std::is_signed<T>::value, std::int64_t, std::uint64_t>::type;
+};
+}
+
 template<typename Iterator, typename T>
 Iterator unsigned_int_strict(Iterator out, cbor::MajorType type, T value)
 {
 	static_assert(std::is_integral<T>::value && !std::is_signed<T>::value, "T expected to be unsigned integral type");
-	boost::endian::native_to_big_inplace(value);
+	//boost::endian::native_to_big_inplace(value);
+	value = T(boost::endian::native_to_big<typename workaround::ResolveAmbiguity<T>::type >(value));
 	auto begin = reinterpret_cast<std::uint8_t const*>(&value);
 	auto end = begin + sizeof(T) / sizeof(std::uint8_t);
 	out = std::uint8_t(type) | TypeAdditionalInfo<sizeof(T)>::value;

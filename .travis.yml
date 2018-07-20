@@ -10,7 +10,7 @@ matrix:
     # - os: osx
     #   osx_image: xcode9.4
     #   env: >
-    #        COMPILER=clang++-5.0 TOOLSET=clang CPPSTD=c++1y
+    #        COMPILER=clang++ TOOLSET=clang CPPSTD=c++1y
     #        BOOST_VER=1.66.0
     - os: linux
       dist: trusty

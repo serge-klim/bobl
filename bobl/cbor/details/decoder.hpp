@@ -170,12 +170,36 @@ public:
 			throw bobl::InputToShort{ "not enought data to decode CBOR value type" };
 		auto type = bobl::cbor::utility::decode::major_type(*begin);
 		if(!is(type))
-			throw bobl::IncorrectObjectType{ str(boost::format("CBOR value has unexpected type : %1$#x insted of expected integer type") % int(type)) };
-		auto val = bobl::cbor::utility::decode::integer(begin, end);
-		auto res = T(val);
+			throw bobl::IncorrectObjectType{ str(boost::format("CBOR value has unexpected type: %1$#x insted of expected integer type") % int(type)) };
+		return cast_result<T>(type, utility::decode::integer(begin, end));
+	}
+private:
+	template<typename U>
+	static auto cast_result(MajorType type, std::uint64_t val) -> typename std::enable_if<std::is_signed<U>::value, U>::type
+	{
+		auto res = U(val);
 		if (std::uint64_t(res) != val)
-			throw bobl::IncorrectObjectType{ str(boost::format("%1% bit integer is short to hold %2% ") % (8*sizeof(T)) % (type == bobl::cbor::MajorType::NegativeInt ? -res : res)  ) };
+			throw bobl::IncorrectObjectType{ str(boost::format("CBOR can't decode %1% to %2% bit integer (%3%)") 
+											% (type == bobl::cbor::MajorType::NegativeInt ? -std::int64_t(val) : std::int64_t(val))
+											% (8 * sizeof(U)) 
+											% TypeName<U>{}()
+											) };
 		return type == bobl::cbor::MajorType::NegativeInt ? (-res - 1) : res;
+	}
+
+	template<typename U>
+	static auto cast_result(MajorType type, std::uint64_t val) -> typename std::enable_if<std::is_unsigned<U>::value, U>::type
+	{
+		if (type == bobl::cbor::MajorType::NegativeInt)
+			throw bobl::IncorrectObjectType{ "can't decode CBOR negative integer to unsigned integer" };
+		auto res = U(val);
+		if (std::uint64_t(res) != val)
+			throw bobl::IncorrectObjectType{ str(boost::format("CBOR can't decode %1% to %2% bit integer (%3%)") 
+											% res
+											% (8 * sizeof(U)) 
+											% TypeName<U>{}()
+											) };
+		return res;
 	}
 };
 

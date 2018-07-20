@@ -129,7 +129,7 @@ private:
 	static typename std::enable_if<!IntegerOptimizeSize::value, Iterator>::type encode_(Iterator out, bobl::cbor::MajorType type, U value)
 	{
 		static_assert(std::is_integral<U>::value && !std::is_signed<U>::value, "U expected to be unsigned integral type");
-		return bobl::cbor::utility::encode::unsigned_int_strict(out, type, value);
+		return bobl::cbor::utility::encode::unsigned_int_strict(std::move(out), type, value);
 	}	
 };
 

@@ -8,6 +8,7 @@
 #include <boost/cstdfloat.hpp>
 #include <vector>
 #include <string>
+#include <stdexcept>
 #include <cstdint>
 
 enum TheEnum
@@ -352,3 +353,14 @@ struct SimpleOptionalTest
 BOOST_FUSION_ADAPT_STRUCT(SimpleOptionalTest, type, id)
 
 
+class CheckMessage
+{
+public:
+	CheckMessage(std::string msg) : msg_{ std::move(msg) } {}
+	bool operator()(std::exception const& e) const
+	{
+		return msg_.compare(e.what()) == 0;
+	}
+private:
+	std::string msg_;
+};

@@ -7,7 +7,7 @@ unit-test test :
           cbor_encode.cpp
           bson_decode.cpp
           bson_encode.cpp
-          : <testing.arg>--log_level=all
-            <library>/boost//unit_test_framework/<link>static
+          :
+			<library>/boost//unit_test_framework/<link>static
           ;
 

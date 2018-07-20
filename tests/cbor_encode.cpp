@@ -91,6 +91,142 @@ BOOST_AUTO_TEST_CASE(EncodeNamedTupleTest)
 	BOOST_CHECK_EQUAL(int(simple.theEnum), 2);
 }
 
+BOOST_AUTO_TEST_CASE(LongLongIntegersTest)
+{
+	auto value = Vector<long long> 
+	{
+		{
+			(std::numeric_limits<long long>::min)(),
+			-1000000000000000000,
+			-100000000000000000,
+			-10000000000000000,
+			-1000000000000000,
+			-100000000000000,
+			-10000000000000,
+			-1000000000000,
+			-100000000000,
+			-10000000000,
+			-4294967297,
+			-1,
+			 0,
+			 10000000000,
+			 100000000000,
+			 1000000000000,
+			 10000000000000,
+			 100000000000000,
+			 1000000000000000,
+			 100000000000000000,
+			 1000000000000000000,
+			 (std::numeric_limits<long long>::max)(),
+		}
+	};
+	auto data = bobl::cbor::encode(value);
+	uint8_t const* begin = data.data();
+	uint8_t const* end = begin + data.size();
+	auto res = bobl::cbor::decode<Vector<long long>>(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
+	BOOST_CHECK_EQUAL_COLLECTIONS(std::begin(value.vector), std::end(value.vector), std::begin(res.vector), std::end(res.vector));
+
+	/*uint8_t const**/ begin = data.data();
+	BOOST_CHECK_EXCEPTION(bobl::cbor::decode<Vector<unsigned long long>>(begin, end), bobl::IncorrectObjectType, CheckMessage{"can't decode CBOR negative integer to unsigned integer"});
+
+	/*uint8_t const**/ begin = data.data();
+	BOOST_CHECK_EXCEPTION(bobl::cbor::decode<Vector<int>>(begin, end), bobl::IncorrectObjectType, CheckMessage{ "CBOR can't decode -9223372036854775807 to 32 bit integer (int)" });	
+}
+
+BOOST_AUTO_TEST_CASE(LongLongUnsignedIntegersTest)
+{
+	auto value = Vector<long long>
+	{
+		{
+			0,
+			10000000000,
+			100000000000,
+			1000000000000,
+			10000000000000,
+			100000000000000,
+			1000000000000000,
+			100000000000000000,
+			1000000000000000000,
+			(std::numeric_limits<long long>::max)(),
+		}
+	};
+	auto data = bobl::cbor::encode(value);
+	uint8_t const* begin = data.data();
+	uint8_t const* end = begin + data.size();
+	auto res = bobl::cbor::decode<Vector<unsigned long long>>(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
+	BOOST_CHECK_EQUAL_COLLECTIONS(std::begin(value.vector), std::end(value.vector), std::begin(res.vector), std::end(res.vector));
+
+	/*uint8_t const**/ begin = data.data();
+	BOOST_CHECK_EXCEPTION(bobl::cbor::decode<Vector<int>>(begin, end), bobl::IncorrectObjectType, CheckMessage{ "CBOR can't decode 10000000000 to 32 bit integer (int)" });
+}
+
+BOOST_AUTO_TEST_CASE(LongIntegersTest)
+{
+	auto value = Vector<long>
+	{
+		{
+			(std::numeric_limits<long>::min)(),
+			-100000,
+			-10000,
+			-1000,
+			-100,
+			-10,
+			-1,
+			0,
+			10,
+			100,
+			1000,
+			10000,
+			100000,
+			(std::numeric_limits<long>::max)(),
+		}
+	};
+	auto data = bobl::cbor::encode(value);
+	uint8_t const* begin = data.data();
+	uint8_t const* end = begin + data.size();
+	auto res = bobl::cbor::decode<Vector<long>>(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
+	BOOST_CHECK_EQUAL_COLLECTIONS(std::begin(value.vector), std::end(value.vector), std::begin(res.vector), std::end(res.vector));
+
+	/*uint8_t const**/ begin = data.data();
+	BOOST_CHECK_EXCEPTION(bobl::cbor::decode<Vector<unsigned long>>(begin, end), bobl::IncorrectObjectType, CheckMessage{ "can't decode CBOR negative integer to unsigned integer" });
+}
+
+
+BOOST_AUTO_TEST_CASE(ShortIntegersTest)
+{
+	auto value = Vector<short>
+	{
+		{
+			(std::numeric_limits<short>::min)(),
+			-100
+			-10,
+			-3,
+			-2,
+			-1,
+			0,
+			1,
+			2,
+			3,
+			10,
+		    100,
+			(std::numeric_limits<short>::max)(),
+		}
+	};
+	auto data = bobl::cbor::encode(value);
+	uint8_t const* begin = data.data();
+	uint8_t const* end = begin + data.size();
+	auto res = bobl::cbor::decode<Vector<short>>(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
+	BOOST_CHECK_EQUAL_COLLECTIONS(std::begin(value.vector), std::end(value.vector), std::begin(res.vector), std::end(res.vector));
+
+	/*uint8_t const**/ begin = data.data();
+	BOOST_CHECK_EXCEPTION(bobl::cbor::decode<Vector<unsigned short>>(begin, end), bobl::IncorrectObjectType, CheckMessage{ "can't decode CBOR negative integer to unsigned integer" });
+}
+
+
 BOOST_AUTO_TEST_CASE(OrderedIntDictionaryTest)
 {
 	auto value = OrderedIntDictionary{ 3, 128, 32767, 268435455, -4, -121, -32765, -268435454 };
