@@ -97,6 +97,165 @@ BOOST_AUTO_TEST_CASE(EncodeNamedTupleTest)
 	BOOST_CHECK_EQUAL(int(simple.theEnum), 2);
 }
 
+BOOST_AUTO_TEST_CASE(LongLongIntegersTest)
+{
+	auto value = Vector<long long> 
+	{
+		{
+			(std::numeric_limits<long long>::min)(),
+			-1000000000000000000,
+			-100000000000000000,
+			-10000000000000000,
+			-1000000000000000,
+			-100000000000000,
+			-10000000000000,
+			-1000000000000,
+			-100000000000,
+			-10000000000,
+			-4294967297,
+			-100000,
+			-10000,
+			-1000,
+			-100,
+			-10,
+			-1,
+			-33,
+			-32
+			-31,
+			-30
+			-29,
+		    -28,
+		    -27,
+		    -26,
+		    -25,
+		    -24,
+		    -23,
+		    -22,
+		    -21,
+		    -20,
+			0,
+			10,
+			20,
+			21,
+			22,
+			23,
+			24,
+			25,
+			26,
+			27,
+			28,
+			29,
+			30,
+			31,
+			32,
+			33,
+			100,
+			1000,
+			10000,
+			100000,
+			10000000000,
+			100000000000,
+			1000000000000,
+			10000000000000,
+			100000000000000,
+			1000000000000000,
+			100000000000000000,
+			1000000000000000000,
+			(std::numeric_limits<long long>::max)(),
+		}
+	};
+	auto data = bobl::bson::encode(value);
+	uint8_t const* begin = data.data();
+	uint8_t const* end = begin + data.size();
+	auto res = bobl::bson::decode<Vector<long long>>(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
+	BOOST_CHECK_EQUAL_COLLECTIONS(std::begin(value.vector), std::end(value.vector), std::begin(res.vector), std::end(res.vector));
+
+	{
+		uint8_t const* begin = data.data();
+		bobl::bson::decode<Vector<unsigned long long>>(begin, end);
+		BOOST_CHECK_EQUAL(begin, end);
+		BOOST_CHECK_EQUAL_COLLECTIONS(std::begin(value.vector), std::end(value.vector), std::begin(res.vector), std::end(res.vector));
+	}
+}
+
+BOOST_AUTO_TEST_CASE(IntegerOptimizeSizeTest)
+{
+	auto value = Vector<long long>
+	{
+		{
+			(std::numeric_limits<long long>::min)(),
+			-1000000000000000000,
+			-100000000000000000,
+			-10000000000000000,
+			-1000000000000000,
+			-100000000000000,
+			-10000000000000,
+			-1000000000000,
+			-100000000000,
+			-10000000000,
+			-4294967297,
+			-100000,
+			-10000,
+			-1000,
+			-100,
+			-10,
+			-1,
+			-33,
+			-32
+			-31,
+			-30
+			-29,
+		    -28,
+		    -27,
+		    -26,
+		    -25,
+		    -24,
+		    -23,
+		    -22,
+		    -21,
+		    -20,
+			0,
+			10,
+			20,
+			21,
+			22,
+			23,
+			24,
+			25,
+			26,
+			27,
+			28,
+			29,
+			30,
+			31,
+			32,
+			33,
+			100,
+			1000,
+			10000,
+			100000,
+			10000000000,
+			100000000000,
+			1000000000000,
+			10000000000000,
+			100000000000000,
+			1000000000000000,
+			100000000000000000,
+			1000000000000000000,
+			(std::numeric_limits<long long>::max)(),
+		}
+	};
+	auto data = bobl::bson::encode<bobl::options::IntegerOptimizeSize>(value);
+	uint8_t const* begin = data.data();
+	uint8_t const* end = begin + data.size();
+	BOOST_CHECK_EXCEPTION(bobl::bson::decode<Vector<long long>>(begin, end), bobl::IncorrectObjectType, CheckMessage{ "BSON object 29 has unexpected type : Int32 (0x10) insted of expected: Int64" });
+
+	/*uint8_t const**/ begin = data.data();
+	auto res = bobl::bson::decode<Vector<long long>, bobl::Options<bobl::options::RelaxedIntegers>>(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
+	BOOST_CHECK_EQUAL_COLLECTIONS(std::begin(value.vector), std::end(value.vector), std::begin(res.vector), std::end(res.vector));
+}
 
 BOOST_AUTO_TEST_CASE(OrderedIntDictionaryTest)
 {

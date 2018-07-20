@@ -141,23 +141,23 @@ public:
 		return encode_<typename bobl::utility::options::Contains<typename bobl::bson::EffectiveOptions<T, Options>::type, bobl::options::IntegerOptimizeSize>::type>(std::move(out), std::move(name), val);
 	}
 private:
-	template<typename IntegerOptimizeSize, typename Iterator>
-	static typename std::enable_if<IntegerOptimizeSize::value, Iterator>::type encode_(Iterator out, diversion::string_view name, T val)
+	template<typename IntegerOptimizeSize, typename Iterator, typename U>
+	static typename std::enable_if<IntegerOptimizeSize::value, Iterator>::type encode_(Iterator out, diversion::string_view name, U val)
 	{
-		using Int32type = typename std::conditional<std::is_signed<T>::value, std::int32_t, std::uint32_t>::type;
-		return val > std::numeric_limits<std::uint32_t>::max()
+		using Int32type = typename std::conditional<std::is_signed<U>::value, std::int32_t, std::uint32_t>::type;
+		return val > std::numeric_limits<std::uint32_t>::max() || val < std::numeric_limits<std::uint32_t>::min() 
 						? encode_<boost::mpl::false_>(std::move(out), std::move(name), val)
 						: encode_<boost::mpl::false_>(std::move(out), std::move(name), Int32type(val));
 	}
 
-	template<typename IntegerOptimizeSize, typename Iterator>
-	static typename std::enable_if<!IntegerOptimizeSize::value, Iterator>::type encode_(Iterator out, diversion::string_view name, T val)
+	template<typename IntegerOptimizeSize, typename Iterator, typename U>
+	static typename std::enable_if<!IntegerOptimizeSize::value, Iterator>::type encode_(Iterator out, diversion::string_view name, U val)
 	{
-		using Types = typename std::conditional<(sizeof(T) > sizeof(std::uint32_t)), 
+		using Types = typename std::conditional<(sizeof(U) > sizeof(std::uint32_t)), 
 									std::pair<std::integral_constant<bobl::bson::Type, bobl::bson::Type::Int64>, 
-												typename std::conditional<std::is_signed<T>::value, std::int64_t, std::uint64_t>::type>,
+												typename std::conditional<std::is_signed<U>::value, std::int64_t, std::uint64_t>::type>,
 									std::pair<std::integral_constant<bobl::bson::Type, bobl::bson::Type::Int32 >,
-												typename std::conditional<std::is_signed<T>::value, std::int32_t, std::uint32_t>::type>
+												typename std::conditional<std::is_signed<U>::value, std::int32_t, std::uint32_t>::type>
 											>::type;
 
 		out = Handler<Header, Options>::encode(out, std::make_pair(Types::first_type::value, std::move(name)));

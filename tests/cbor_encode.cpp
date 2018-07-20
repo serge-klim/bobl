@@ -107,17 +107,55 @@ BOOST_AUTO_TEST_CASE(LongLongIntegersTest)
 			-100000000000,
 			-10000000000,
 			-4294967297,
+			-100000,
+			-10000,
+			-1000,
+			-100,
+			-10,
 			-1,
-			 0,
-			 10000000000,
-			 100000000000,
-			 1000000000000,
-			 10000000000000,
-			 100000000000000,
-			 1000000000000000,
-			 100000000000000000,
-			 1000000000000000000,
-			 (std::numeric_limits<long long>::max)(),
+			-33,
+			-32
+			-31,
+			-30
+			-29,
+		    -28,
+		    -27,
+		    -26,
+		    -25,
+		    -24,
+		    -23,
+		    -22,
+		    -21,
+		    -20,
+			0,
+			10,
+			20,
+			21,
+			22,
+			23,
+			24,
+			25,
+			26,
+			27,
+			28,
+			29,
+			30,
+			31,
+			32,
+			33,
+			100,
+			1000,
+			10000,
+			100000,
+			10000000000,
+			100000000000,
+			1000000000000,
+			10000000000000,
+			100000000000000,
+			1000000000000000,
+			100000000000000000,
+			1000000000000000000,
+			(std::numeric_limits<long long>::max)(),
 		}
 	};
 	auto data = bobl::cbor::encode(value);
@@ -132,6 +170,87 @@ BOOST_AUTO_TEST_CASE(LongLongIntegersTest)
 
 	/*uint8_t const**/ begin = data.data();
 	BOOST_CHECK_EXCEPTION(bobl::cbor::decode<Vector<int>>(begin, end), bobl::IncorrectObjectType, CheckMessage{ "CBOR can't decode -9223372036854775807 to 32 bit integer (int)" });	
+}
+
+BOOST_AUTO_TEST_CASE(IntegerOptimizeSizeTest)
+{
+	auto value = Vector<long long>
+	{
+		{
+			(std::numeric_limits<long long>::min)(),
+			-1000000000000000000,
+			-100000000000000000,
+			-10000000000000000,
+			-1000000000000000,
+			-100000000000000,
+			-10000000000000,
+			-1000000000000,
+			-100000000000,
+			-10000000000,
+			-4294967297,
+			-100000,
+			-10000,
+			-1000,
+			-100,
+			-10,
+			-1,
+			-33,
+			-32
+			-31,
+			-30
+			-29,
+		    -28,
+		    -27,
+		    -26,
+		    -25,
+		    -24,
+		    -23,
+		    -22,
+		    -21,
+		    -20,
+			0,
+			10,
+			20,
+			21,
+			22,
+			23,
+			24,
+			25,
+			26,
+			27,
+			28,
+			29,
+			30,
+			31,
+			32,
+			33,
+			100,
+			1000,
+			10000,
+			100000,
+			10000000000,
+			100000000000,
+			1000000000000,
+			10000000000000,
+			100000000000000,
+			1000000000000000,
+			100000000000000000,
+			1000000000000000000,
+			(std::numeric_limits<long long>::max)(),
+		}
+	};
+	auto data = bobl::cbor::encode<bobl::options::IntegerOptimizeSize>(value);
+	uint8_t const* begin = data.data();
+	uint8_t const* end = begin + data.size();
+	auto res = bobl::cbor::decode<Vector<long long>>(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
+	BOOST_CHECK_EQUAL_COLLECTIONS(std::begin(value.vector), std::end(value.vector), std::begin(res.vector), std::end(res.vector));
+
+	/*uint8_t const**/ begin = data.data();
+	BOOST_CHECK_EXCEPTION(bobl::cbor::decode<Vector<unsigned long long>>(begin, end), bobl::IncorrectObjectType, CheckMessage{ "can't decode CBOR negative integer to unsigned integer" });
+
+	/*uint8_t const**/ begin = data.data();
+	BOOST_CHECK_EXCEPTION(bobl::cbor::decode<Vector<int>>(begin, end), bobl::IncorrectObjectType, CheckMessage{ "CBOR can't decode -9223372036854775807 to 32 bit integer (int)" });
 }
 
 BOOST_AUTO_TEST_CASE(LongLongUnsignedIntegersTest)
