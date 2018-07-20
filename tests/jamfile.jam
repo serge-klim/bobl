@@ -5,8 +5,10 @@ unit-test test :
           tests.cpp
           cbor_decode.cpp
           cbor_encode.cpp
+		  cbor_it.cpp
           bson_decode.cpp
           bson_encode.cpp
+		  bson_it.cpp
           :
 			<library>/boost//unit_test_framework/<link>static
           ;

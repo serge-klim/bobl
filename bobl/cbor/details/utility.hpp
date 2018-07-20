@@ -187,7 +187,8 @@ T floating_point(Iterator& begin, Iterator end)
 template<typename Iterator>
 std::uint64_t length(Iterator& begin, Iterator end)
 {
-    return (*begin&cbor::AditionalInfoMask) == 31 
+//	assert((type(*begin)&cbor::AditionalInfoMask) != 31 && "indefinite length should be checked beforehand");
+    return (type(*begin)&cbor::AditionalInfoMask) == 31 
         ? ++begin, bobl::cbor::utility::decode::IndefiniteLength
         : integer(begin, end);
 }

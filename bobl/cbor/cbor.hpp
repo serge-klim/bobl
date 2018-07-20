@@ -9,7 +9,15 @@ namespace bobl{ namespace cbor {
 enum Type : std::uint8_t
 {
 	UnsignedInt = (0 << 5),
+	UnsignedInt8 = UnsignedInt | 24,
+	UnsignedInt16 = UnsignedInt | 25,
+	UnsignedInt32 = UnsignedInt | 26,
+	UnsignedInt64 = UnsignedInt | 27,
 	NegativeInt = (1 << 5),
+	NegativeInt8 = NegativeInt | 24,
+	NegativeInt16 = NegativeInt | 25,
+	NegativeInt32 = NegativeInt | 26,
+	NegativeInt64 = NegativeInt | 27,
 	ByteString = (2 << 5),
 	TextString = (3 << 5),
 	Array = (4 << 5),

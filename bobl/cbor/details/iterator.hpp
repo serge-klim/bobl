@@ -2,7 +2,7 @@
 
 #pragma once
 #include "bobl/cbor/details/decoder.hpp"
-#include "bobl/utility/names.hpp"
+#include "bobl/utility/iterator.hpp"
 
 
 namespace bobl{ namespace cbor { 
@@ -37,6 +37,26 @@ template<typename Array, typename T, typename Options>
 using ArrayIterator = typename Traits<Array>::template Iterator<T, Options>;
 
 
-} /*namespace details*/ }/*namespace cbor*/ } /*namespace bobl*/
+} /*namespace details*/ 
+
+template <typename T>
+struct Traits {};
+
+template<typename RawIterator>
+struct Traits<bobl::flyweight::lite::Array<RawIterator>>
+{
+	template<typename U, typename Options = bobl::options::None>
+	using Iterator = bobl::utility::Iterator<U, Options, details::ValueDecoder, RawIterator>;
+};
+
+template<typename RawIterator>
+struct Traits<bobl::flyweight::lite::Object<RawIterator>>
+{
+	template<typename U, typename Options = bobl::options::None>
+	using Iterator = bobl::utility::Iterator<U, Options, details::NameValueDecoder, RawIterator>;
+};
+
+
+}/*namespace cbor*/ } /*namespace bobl*/
 
 

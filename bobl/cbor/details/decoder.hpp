@@ -249,14 +249,17 @@ class Handler<bobl::flyweight::lite::utility::Any<T>, Options, boost::mpl::true_
 public:
 	constexpr static bool is(cbor::Type type) { return true; }
 	template<typename Iterator>
-	static bobl::flyweight::lite::Any<Iterator> decode(Iterator& begin, Iterator end)
+	static bobl::flyweight::lite::Any<T> decode(Iterator& begin, Iterator end)
 	{
 		auto i = begin;
-		switch (auto type = bobl::cbor::utility::decode::major_type(*begin))
+		auto type = bobl::cbor::utility::decode::type(*begin);
+		switch (auto major_type = bobl::cbor::utility::decode::major_type(type))
 		{
+			case bobl::cbor::MajorType::SimpleValue:
+				if(type == bobl::cbor::Break)
+					throw bobl::InvalidObject{"unexpected break"};
 			case bobl::cbor::MajorType::UnsignedInt:
 			case bobl::cbor::MajorType::NegativeInt:
-			case bobl::cbor::MajorType::SimpleValue:
 				bobl::cbor::utility::decode::integer(begin, end);
 				break;
 			case bobl::cbor::MajorType::ByteString:
@@ -266,14 +269,15 @@ public:
 				if (len != bobl::cbor::utility::decode::IndefiniteLength)
 				{
 					if (decltype(len)(std::distance(begin, end)) < len)
-						throw bobl::InputToShort(str(boost::format("not enought data to decode CBOR \"%1%\"") % to_string(type)));
+						throw bobl::InputToShort(str(boost::format("not enought data to decode CBOR \"%1%\"") % to_string(major_type)));
 					std::advance(begin, len);
 				}
 				else
 				{
-					begin = std::find(begin, end, cbor::Break);
+					begin = std::find(begin, end, typename std::iterator_traits<Iterator>::value_type(cbor::Break));
 					if(begin == end)
-						throw bobl::InvalidObject(str(boost::format("break is missing for indefinite length \"%1%\"") % to_string(type)));
+						throw bobl::InvalidObject(str(boost::format("break is missing for indefinite length \"%1%\"") % to_string(major_type)));
+					++begin;
 				}
 				break;
 			}
@@ -294,13 +298,14 @@ public:
 	}
 
 	template<typename Iterator>
-	static void decode_array(Iterator& begin, Iterator end, bobl::flyweight::lite::Any<Iterator>(*value_decoder)(Iterator& begin, Iterator end))
+	static void decode_array(Iterator& begin, Iterator end, bobl::flyweight::lite::Any<T>(*value_decoder)(Iterator& begin, Iterator end))
 	{
-		decode_array(bobl::cbor::utility::decode::length(begin, end), begin, end, value_decoder);
+		auto len = bobl::cbor::utility::decode::length(begin, end);
+		decode_array(len, begin, end, value_decoder);
 	}
 
 	template<typename Iterator>
-	static void decode_array(std::uint64_t len, Iterator& begin, Iterator end, bobl::flyweight::lite::Any<Iterator>(*value_decoder)(Iterator& begin, Iterator end))
+	static void decode_array(std::uint64_t len, Iterator& begin, Iterator end, bobl::flyweight::lite::Any<T>(*value_decoder)(Iterator& begin, Iterator end))
 	{
 		if (len != bobl::cbor::utility::decode::IndefiniteLength)
 		{
@@ -322,7 +327,7 @@ public:
 	}
 
 	template<typename Iterator>
-	static bobl::flyweight::lite::Any<Iterator> decode_pair(Iterator& begin, Iterator end)
+	static bobl::flyweight::lite::Any<T> decode_pair(Iterator& begin, Iterator end)
 	{
 		auto i = begin;
 		//bobl::cbor::utility::decode::validate<cbor::MajorType::TextString>(begin, end);

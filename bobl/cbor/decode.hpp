@@ -38,47 +38,31 @@ bobl::Type type(bobl::flyweight::lite::Any<Iterator> const& any)
 		throw bobl::InputToShort{ "not enought data to decode CBOR value type from lite::Any" };
 
 	auto res = bobl::Type::Null;
-	switch (auto type = bobl::cbor::utility::decode::type(*begin))
+	switch (auto type = utility::decode::type(*begin))
 	{
-		case Type::UnsignedInt:
-			switch (auto subtype = *begin&cbor::AditionalInfoMask)
-			{
-				case TypeAdditionalInfo<sizeof(std::uint16_t)>::value:
-					res = bobl::Type::UnsignedInt16;
-					break;
-				case TypeAdditionalInfo<sizeof(std::uint32_t)>::value:
-					res = bobl::Type::UnsignedInt32;
-					break;
-				case TypeAdditionalInfo<sizeof(std::uint64_t)>::value:
-					res = bobl::Type::UnsignedInt64;
-					break;
-				default:
-					res = bobl::Type::Tiny;
-					break;
-			}
+		case Type::UnsignedInt8:
+			res = bobl::Type::UnsignedInt8;
 			break;
-		case Type::NegativeInt:
-			switch (auto subtype = *begin&cbor::AditionalInfoMask)
-			{
-				case TypeAdditionalInfo<sizeof(std::uint16_t)>::value:
-					res = bobl::Type::Int16;
-					break;
-				case TypeAdditionalInfo<sizeof(std::uint32_t)>::value:
-					res = bobl::Type::Int32;
-					break;
-				case TypeAdditionalInfo<sizeof(std::uint64_t)>::value:
-					res = bobl::Type::Int64;
-					break;
-				default:
-					res = bobl::Type::Tiny;
-					break;
-			}
+		case Type::UnsignedInt16:
+			res = bobl::Type::UnsignedInt16;
 			break;
-		case Type::ByteString:
-			res = bobl::Type::Binary;
+		case Type::UnsignedInt32:
+			res = bobl::Type::UnsignedInt32;
 			break;
-		case Type::TextString:
-			res = bobl::Type::String;
+		case Type::UnsignedInt64:
+			res = bobl::Type::UnsignedInt64;
+			break;
+		case Type::NegativeInt8:
+			res = bobl::Type::Int16;
+			break;
+		case Type::NegativeInt16:
+			res = bobl::Type::Int32;
+			break;
+		case Type::NegativeInt32:
+			res = bobl::Type::Int64;
+			break;
+		case Type::NegativeInt64:
+			res = bobl::Type::Int64;
 			break;
 		case Type::Null:
 			res = bobl::Type::Null;
@@ -87,43 +71,56 @@ bobl::Type type(bobl::flyweight::lite::Any<Iterator> const& any)
 		case Type::True:
 			res = bobl::Type::Bool;
 			break;
-		case Type::Tag:
-			switch (auto tag = integer(begin, end))
-			{
-				case DataTimeString:
-				case DataTimeNumerical:
-					res = bobl::Type::Timepoint;
-					break;
-				case UUID:
-					res = bobl::Type::UUID;
-					break;
-			}
+		case Type::Float16:
+			res = bobl::Type::Float16;
 			break;
-		case Type::SimpleValue:
-			switch (auto subtype = *begin&cbor::AditionalInfoMask)
-			{
-				case TypeAdditionalInfo<sizeof(std::uint16_t)>::value:
-					res = bobl::Type::Float16;
-					break;
-				case TypeAdditionalInfo<sizeof(std::uint32_t)>::value:
-					res = bobl::Type::Float32;
-					break;
-				case TypeAdditionalInfo<sizeof(std::uint64_t)>::value:
-					res = bobl::Type::Float64;
-					break;
-				default:
-					throw bobl::TypeNotSupported(str(boost::format("CBOR unsupported Simple value subtype %1% (%1$#x)")  % int(subtype)));
-			}
+		case Type::Float32:
+			res = bobl::Type::Float16;
 			break;
-		case Type::Array:
-			res = bobl::Type::Array;
-			break;
-		case Type::Dictionary:
-			res = bobl::Type::Dictionary;
+		case Type::Float64:
+			res = bobl::Type::Float16;
 			break;
 		default:
-			throw bobl::TypeNotSupported(str(boost::format("unsupported type %1% (%2$#x)") % to_string(type) % int(type)));
-			break;
+		{
+			switch (auto major_type = utility::decode::major_type(type))
+			{
+				case MajorType::UnsignedInt:
+					assert((type&cbor::AditionalInfoMask) < 24);
+					res = bobl::Type::Tiny;
+					break;
+				case MajorType::NegativeInt:
+					assert((type&cbor::AditionalInfoMask) < 24);
+					res = bobl::Type::Tiny;
+					break;
+				case MajorType::ByteString:
+					res = bobl::Type::Binary;
+					break;
+				case MajorType::TextString:
+					res = bobl::Type::String;
+					break;
+				case MajorType::Array:
+					res = bobl::Type::Array;
+					break;
+				case MajorType::Dictionary:
+					res = bobl::Type::Dictionary;
+					break;
+				case MajorType::Tag:
+					switch (auto tag = utility::decode::integer(begin, end))
+					{
+						case DataTimeString:
+						case DataTimeNumerical:
+							res = bobl::Type::Timepoint;
+							break;
+						case UUID:
+							res = bobl::Type::UUID;
+							break;
+					}
+					break;
+				default:
+					throw bobl::TypeNotSupported(str(boost::format("unsupported type %1% (%2$#x)") % to_string(type) % int(type)));
+					break;
+			}
+		}
 	}
 	return res;
 }
