@@ -1,6 +1,6 @@
 ### bobl
 
-[![Build Status](https://travis-ci.com/serge-klim/bobl.svg?branch=master)](https://travis-ci.com/serge-klim/bobl.svg?branch=master)
+[![Build Status](https://travis-ci.com/serge-klim/bobl.svg?branch=master)](https://travis-ci.com/serge-klim/bobl)
 [![Build status](https://ci.appveyor.com/api/projects/status/pj023kupejhaccr7?svg=true)](https://ci.appveyor.com/project/serge-klim/bobl)
 [![codecov](https://codecov.io/gh/serge-klim/bobl/branch/master/graph/badge.svg)](https://codecov.io/gh/serge-klim/bobl)
 
