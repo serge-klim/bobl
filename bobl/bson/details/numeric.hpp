@@ -5,6 +5,7 @@
 #include "bobl/utility/type_name.hpp"
 #include "bobl/utility/utils.hpp"
 #include "bobl/bobl.hpp"
+#include "boost/numeric/conversion/cast.hpp"
 #include <boost/endian/conversion.hpp>
 #include <boost/format.hpp>
 #include <string>
@@ -43,10 +44,13 @@ private:
 	static auto cast_pointer(X const* ptr) -> typename std::enable_if<(sizeof(U) < sizeof(X)), U>::type
 	{
 		auto raw = boost::endian::little_to_native(*ptr);
-		auto res = U(raw);
-		if (X(res) != raw)
+		try {
+			return boost::numeric_cast<U>(boost::endian::little_to_native(*ptr));
+		}
+		catch (boost::numeric::bad_numeric_cast&)
+		{
 			throw RangeError{ str(boost::format("\"%1%\" can't hold parsed integer value \"%2%\"") % boost::typeindex::type_id<U>().pretty_name() % raw) };
-		return res;
+		}
 	}
 	template<typename U, typename X>
 	static auto cast_pointer(X const* ptr) -> typename std::enable_if<(sizeof(U) >= sizeof(X)), U>::type

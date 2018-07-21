@@ -26,6 +26,7 @@
 #include <boost/mpl/and.hpp>
 #include <boost/mpl/not.hpp>
 #include <boost/mpl/bool_fwd.hpp>
+#include "boost/numeric/conversion/cast.hpp"
 #include <boost/format.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/core/ignore_unused.hpp>
@@ -178,12 +179,18 @@ private:
 	static auto cast_result(MajorType type, std::uint64_t val) -> typename std::enable_if<std::is_signed<U>::value, U>::type
 	{
 		auto res = U(val);
-		if (std::uint64_t(res) != val)
-			throw bobl::IncorrectObjectType{ str(boost::format("CBOR can't decode %1% to %2% bit integer (%3%)") 
+		try
+		{
+			res = boost::numeric_cast<U>(val);
+		}
+		catch (boost::numeric::bad_numeric_cast&)
+		{
+			throw bobl::IncorrectObjectType{ str(boost::format("CBOR can't decode %1% to %2% bit integer (%3%)")
 											% (type == bobl::cbor::MajorType::NegativeInt ? -std::int64_t(val) : std::int64_t(val))
-											% (8 * sizeof(U)) 
+											% (8 * sizeof(U))
 											% TypeName<U>{}()
 											) };
+		}
 		return type == bobl::cbor::MajorType::NegativeInt ? (-res - 1) : res;
 	}
 
@@ -192,14 +199,19 @@ private:
 	{
 		if (type == bobl::cbor::MajorType::NegativeInt)
 			throw bobl::IncorrectObjectType{ "can't decode CBOR negative integer to unsigned integer" };
-		auto res = U(val);
-		if (std::uint64_t(res) != val)
-			throw bobl::IncorrectObjectType{ str(boost::format("CBOR can't decode %1% to %2% bit integer (%3%)") 
+		auto res = boost::endian::little_to_native(val);
+		try 
+		{
+			return boost::numeric_cast<U>(res);
+		}
+		catch (boost::numeric::bad_numeric_cast&)
+		{
+			throw bobl::IncorrectObjectType{ str(boost::format("CBOR can't decode %1% to %2% bit integer (%3%)")
 											% res
-											% (8 * sizeof(U)) 
+											% (8 * sizeof(U))
 											% TypeName<U>{}()
 											) };
-		return res;
+		}
 	}
 };
 

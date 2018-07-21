@@ -133,7 +133,12 @@ BOOST_AUTO_TEST_CASE(LongLongIntegersTest)
 		    -22,
 		    -21,
 		    -20,
+		    -10,
+		    -5,
+		    -1,			
 			0,
+			1,
+			5,
 			10,
 			20,
 			21,
@@ -215,7 +220,12 @@ BOOST_AUTO_TEST_CASE(IntegerOptimizeSizeTest)
 		    -22,
 		    -21,
 		    -20,
+		    -10,
+		    -5,
+		    -1,			
 			0,
+			1,
+			5,
 			10,
 			20,
 			21,
@@ -249,7 +259,7 @@ BOOST_AUTO_TEST_CASE(IntegerOptimizeSizeTest)
 	auto data = bobl::bson::encode<bobl::options::IntegerOptimizeSize>(value);
 	uint8_t const* begin = data.data();
 	uint8_t const* end = begin + data.size();
-	BOOST_CHECK_EXCEPTION(bobl::bson::decode<Vector<long long>>(begin, end), bobl::IncorrectObjectType, CheckMessage{ "BSON object 29 has unexpected type : Int32 (0x10) insted of expected: Int64" });
+	BOOST_CHECK_EXCEPTION(bobl::bson::decode<Vector<long long>>(begin, end), bobl::IncorrectObjectType, CheckMessage{ "BSON object 32 has unexpected type : Int32 (0x10) insted of expected: Int64" });
 
 	/*uint8_t const**/ begin = data.data();
 	auto res = bobl::bson::decode<Vector<long long>, bobl::Options<bobl::options::RelaxedIntegers>>(begin, end);

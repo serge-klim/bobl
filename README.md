@@ -22,6 +22,7 @@ Library is header only library therefore no separately-compiled library binaries
  - [Fusion](http://www.boost.org/doc/libs/1_66_0/libs/fusion/doc/html/)
  - [Uuid](https://www.boost.org/doc/libs/1_67_0/libs/uuid/doc/index.html)
  - [Endian](https://www.boost.org/doc/libs/1_67_0/libs/endian/doc/index.html)
+ - [NumericConversion](https://www.boost.org/doc/libs/1_67_0/libs/numeric/conversion/doc/html/index.html)
  - [Range](https://www.boost.org/doc/libs/1_67_0/libs/range/doc/html/index.html)
  - [TypeIndex](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_typeindex.html)
  - [Format](https://www.boost.org/doc/libs/1_67_0/libs/format/)
