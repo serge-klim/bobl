@@ -251,6 +251,9 @@ public:
 	template<typename Iterator>
 	static bobl::flyweight::lite::Any<T> decode(Iterator& begin, Iterator end)
 	{
+		if (begin == end)
+			throw bobl::InputToShort{ "not enought data to decode CBOR type" };
+
 		auto i = begin;
 		auto type = bobl::cbor::utility::decode::type(*begin);
 		switch (auto major_type = bobl::cbor::utility::decode::major_type(type))

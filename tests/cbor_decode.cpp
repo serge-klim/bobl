@@ -61,6 +61,26 @@ BOOST_AUTO_TEST_CASE(SimpleTest)
 	BOOST_CHECK_EQUAL(begin, end);
 }
 
+BOOST_AUTO_TEST_CASE(SimpleBrokenTest)
+{
+	//{'simple': {'enabled': True, 'id': 100, 'name': 'the name'}, 'theEnum': 2}
+	//(46):b'\xa2fsimple\xa3genabled\xf5bid\x18ddnamehthe namegtheEnum\x02'
+	std::uint8_t data[] = {
+						0xa2, 0x66, 0x73, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0xa3, 0x67, 0x65, 0x6e,
+						0x61, 0x62, 0x6c, 0x65, 0x64, 0xf5, 0x62, 0x69, 0x64, 0x18, 0x64, 0x64,
+						0x6e, 0x61, 0x6d, 0x65, 0x68, 0x74, 0x68, 0x65, 0x20, 0x6e, 0x61, 0x6d,
+						0x65, 0x67, 0x74, 0x68, 0x65, 0x45, 0x6e, 0x75, 0x6d, 0x2};
+
+	uint8_t const* begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	auto res = bobl::cbor::decode<std::tuple<Simple>>(begin, end);
+	auto simple = std::get<0>(res);
+	BOOST_CHECK(simple.enabled);
+	BOOST_CHECK_EQUAL(simple.id, 100);
+	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
+	BOOST_CHECK_EQUAL(int(simple.theEnum), 2);
+	BOOST_CHECK_EQUAL(begin, end);
+}
 
 BOOST_AUTO_TEST_CASE(SimpleOptioonalTest)
 {

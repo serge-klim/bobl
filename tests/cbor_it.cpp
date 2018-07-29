@@ -190,6 +190,14 @@ std::ostream& dump(std::ostream& out, bobl::flyweight::Any const& any)
 	return out;
 }
 
+BOOST_AUTO_TEST_CASE(EmptyTest)
+{
+	std::stringstream out;
+	std::uint8_t const* begin = nullptr;
+	std::uint8_t const* end = nullptr;
+	dump(out, bobl::cbor::make_iterator_range<bobl::flyweight::Any>(begin, end));
+}
+
 BOOST_AUTO_TEST_CASE(Simple1Test)
 {
 	std::uint8_t data[] = { 0x81, 0x7b, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
