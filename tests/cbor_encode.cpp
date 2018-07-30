@@ -4,6 +4,7 @@
 #include "bobl/cbor/encode.hpp"
 #include "bobl/cbor/decode.hpp"
 #include "tests.hpp"
+#include "test_hlp.hpp"
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid.hpp>

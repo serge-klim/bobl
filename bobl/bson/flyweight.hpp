@@ -178,7 +178,7 @@ private:
 	static auto decode_as(details::ObjectHeader&& header, bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end) 
 		-> typename std::enable_if<std::tuple_size<TypesTuple>::value == N, NameValue>::type
 	{
-		throw bobl::IncorrectObjectName{ str(boost::format("unexpected BSON object name : \"%1%\".") % header.name()) };
+		throw bobl::IncorrectObjectName{ str(boost::format("unexpected BSON object name : \"%1%\"") % header.name()) };
 	}
 private:
 	ValueHandler handler_;
@@ -227,7 +227,7 @@ bobl::bson::flyweight::NameValue<T, Options, Enabled> bobl::bson::flyweight::Nam
 {
 	auto header = bobl::bson::flyweight::details::ObjectHeader{ begin, end };
 	if (!ename.compare(header.name()))
-		throw bobl::IncorrectObjectName{ str(boost::format("unexpected BSON object name : \"%1%\" (expected \"%2%\").") % header.name() % ename.name()) };
+		throw bobl::IncorrectObjectName{ str(boost::format("unexpected BSON object name : \"%1%\" (expected \"%2%\")") % header.name() % ename.name()) };
 	return decode(std::move(header), begin, end);
 }
 

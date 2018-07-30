@@ -304,28 +304,31 @@ public:
 	static void decode_array(Iterator& begin, Iterator end, bobl::flyweight::lite::Any<T>(*value_decoder)(Iterator& begin, Iterator end))
 	{
 		auto len = bobl::cbor::utility::decode::length(begin, end);
-		decode_array(len, begin, end, value_decoder);
+		if (len == bobl::cbor::utility::decode::IndefiniteLength)
+			decode_sequence(begin, end, value_decoder);
+		else
+			decode_sequence(len, begin, end, value_decoder);
 	}
 
 	template<typename Iterator>
-	static void decode_array(std::uint64_t len, Iterator& begin, Iterator end, bobl::flyweight::lite::Any<T>(*value_decoder)(Iterator& begin, Iterator end))
+	static void decode_sequence(std::uint64_t len, Iterator& begin, Iterator end, bobl::flyweight::lite::Any<T>(*value_decoder)(Iterator& begin, Iterator end))
 	{
-		if (len != bobl::cbor::utility::decode::IndefiniteLength)
+		while (len-- != 0)
+			(*value_decoder)(begin, end);
+	}
+
+	template<typename Iterator>
+	static void decode_sequence(Iterator& begin, Iterator end, bobl::flyweight::lite::Any<T>(*value_decoder)(Iterator& begin, Iterator end))
+	{
+		for (;;)
 		{
-			while (len--!=0)
-				(*value_decoder)(begin, end);
-		}
-		else
-		{
-			for (;;)
-			{
-				if (begin == end)
-					throw bobl::InvalidObject(str(boost::format("not enough data provided to decode indefinite length CBOR \"%1%\"") % 
-							(value_decoder== &Handler::decode_pair<Iterator> ? "dictionary" : "array")));
-				if (*begin == cbor::Break)
-					break;
-				(*value_decoder)(begin, end);
-			}
+			if (begin == end)
+				throw bobl::InvalidObject(str(boost::format("not enough data provided to decode indefinite length CBOR \"%1%\"") %
+				(value_decoder == &Handler::decode_pair<Iterator> ? "dictionary" : "array")));
+			if (*begin == cbor::Break)
+				++begin;
+				break;
+			(*value_decoder)(begin, end);
 		}
 	}
 
@@ -455,7 +458,7 @@ public:
 	{
 		auto name = Handler<Name, bobl::options::None>::decode(begin, end);
 		if(!ename.compare(name()))
-			throw bobl::IncorrectObjectName{ str(boost::format("unexpected CBOR object name : \"%1%\" (expected \"%2%\").") % name() % ename.name()) };
+			throw bobl::IncorrectObjectName{ str(boost::format("unexpected CBOR object name : \"%1%\" (expected \"%2%\")") % name() % ename.name()) };
 
 		using Decoder = typename Decoder<T, Options>::type;
 		return {std::move(name), Decoder::decode(begin, end) };
@@ -600,7 +603,7 @@ private:
 	static auto decode_as(Name const& name, Iterator& /*begin*/, Iterator /*end*/)
 		-> typename std::enable_if<std::tuple_size<TypesTuple>::value == N, NameValue>::type
 	{
-		throw bobl::IncorrectObjectName{ str(boost::format("unexpected CBOR object name : \"%1%\".") % name()) };
+		throw bobl::IncorrectObjectName{ str(boost::format("unexpected CBOR object name : \"%1%\"") % name()) };
 	}
 private:
 	Value value_;
@@ -616,9 +619,43 @@ public:
 	static Value decode(Iterator& begin, Iterator end) { return NameValue<Value, Options>::decode(begin, end).value(); }
 };
 
-template<typename Iterator, typename ...Options>
-struct ArrayValue
+template<typename Iterator>
+struct LengthGuard
 {
+	LengthGuard(LengthGuard const&) = delete;
+	LengthGuard& operator= (LengthGuard const&) = delete;
+	LengthGuard(LengthGuard &&) = default;
+	LengthGuard& operator= (LengthGuard &&) = default;
+	LengthGuard(Iterator& current, std::uint64_t& len) : iterators_(current, current), len_(len)
+	{
+	}
+
+	Iterator end(Iterator i) const
+	{
+		return len_ == 0 ? iterators_.second : i;
+	}
+
+	~LengthGuard()
+	{
+		if (iterators_.first != iterators_.second)
+		{
+			assert(len_ != 0);
+			--len_;
+		}
+	}
+private:
+	std::pair<Iterator&, Iterator> iterators_;
+	std::uint64_t& len_;
+};
+
+
+template<typename Iterator, typename ...Options>
+class ArrayValue 
+{
+public:
+	ArrayValue(std::uint64_t len) : len_{ len } {}
+	std::uint64_t rest() const { return len_; }
+
 	template<typename OtherIterator, typename ...OtherOptions>
 	using rebase = ArrayValue<OtherIterator, OtherOptions...>;
 
@@ -626,12 +663,15 @@ struct ArrayValue
 	T decode(Iterator& begin, Iterator end, ExpectedName const& /*ename*/) const
 	{
 		using Decoder = typename Decoder<T, bobl::Options<Options...>>::type;
-		return Decoder::decode(begin, end);
+		auto guard = LengthGuard<Iterator>{ begin, len_ };
+		return Decoder::decode(begin, guard.end(end));
 	}
+private:
+	mutable std::uint64_t len_;
 };
 
 template<typename Iterator, typename ...Options>
-class ObjectDecoder
+class ObjectDecoder 
 {
 	template<typename T>
 	using NameValue = bobl::cbor::decoder::details::NameValue<T, typename cbor::EffectiveOptions<T, Options...>::type>;
@@ -641,20 +681,27 @@ class ObjectDecoder
 	template<typename T, typename Opts>
 	struct IsNameValue<bobl::cbor::decoder::details::NameValue<T, Opts>> : std::true_type {};
 public:
+	ObjectDecoder(std::uint64_t len) : len_{ len } {}
+	std::uint64_t rest() const { return len_; }
+
 	template<typename OtherIterator, typename ...OtherOptions>
 	using rebase = ObjectDecoder<OtherIterator, OtherOptions...>;
 
 	template<typename T, std::size_t, typename ExpectedName = bobl::utility::ObjectNameIrrelevant>
 	typename std::enable_if<IsNameValue<T>::value, T>::type decode(Iterator& begin, Iterator end, ExpectedName const& ename = bobl::utility::ObjectNameIrrelevant{})
 	{
-		return T::decode(begin, end, ename);
+		auto guard = LengthGuard<Iterator>{ begin, len_ };
+		return T::decode(begin, guard.end(end), ename);
 	}
 
 	template<typename T, std::size_t, typename ExpectedName = bobl::utility::ObjectNameIrrelevant>
 	typename std::enable_if<!IsNameValue<T>::value, T>::type decode(Iterator& begin, Iterator end, ExpectedName const& ename = bobl::utility::ObjectNameIrrelevant{}) const
 	{
-		return NameValue<T>::decode(begin, end, ename).value();
+		auto guard = LengthGuard<Iterator>{ begin, len_ };
+		return NameValue<T>::decode(begin, guard.end(end), ename).value();
 	}
+private:
+	mutable std::uint64_t len_;
 };
 
 template<typename T, typename ...Options>
@@ -680,17 +727,19 @@ public:
 	{
 		bobl::cbor::utility::decode::validate<MajorType::value>(begin, end);
 		auto len = bobl::cbor::utility::decode::length(begin, end);
-		auto res = bobl::utility::Decoder<T, ObjectDecoder<Iterator>, Options...>{}(begin, end);
-		if (len > boost::fusion::result_of::size<T>::value)
+		ObjectDecoder<Iterator> odecoder { len};
+		auto res = bobl::utility::Decoder<T, ObjectDecoder<Iterator>, Options...>{}(odecoder, begin, end);
+		if (auto n = odecoder.rest())
 		{
 			if /*constexpr*/ (bobl::utility::options::Contains<typename bobl::cbor::EffectiveOptions<T, Options...>::type, bobl::options::ExacMatch>::value)
 				throw bobl::InvalidObject{ "CBOR dictionary contains more objects than expected" };
 
-			if(len != bobl::cbor::utility::decode::IndefiniteLength)
-				len-=boost::fusion::result_of::size<T>::value;
-
 			using AnyTypeHandler = Handler<bobl::flyweight::lite::Any<Iterator>, typename cbor::EffectiveOptions<T, Options...>::type >;
-			AnyTypeHandler::decode_array(len, begin, end, &AnyTypeHandler::decode_pair);
+			if (len == bobl::cbor::utility::decode::IndefiniteLength)
+				AnyTypeHandler::decode_sequence(begin, end, &AnyTypeHandler::decode_pair);
+			else
+				AnyTypeHandler::decode_sequence(n, begin, end, &AnyTypeHandler::decode_pair);
+
 		}
 		return res;
 	}

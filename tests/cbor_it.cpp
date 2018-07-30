@@ -1,5 +1,6 @@
 #include <boost/test/unit_test.hpp>
 #include "tests.hpp"
+#include "test_hlp.hpp"
 #include "bobl/cbor/iterator.hpp"
 #include "bobl/cbor/cast.hpp"
 #include "bobl/cbor/decode.hpp"
@@ -205,7 +206,8 @@ BOOST_AUTO_TEST_CASE(Simple1Test)
 	std::stringstream out;
 	auto begin = data;
 	auto end = begin + sizeof(data) / sizeof(data[0]);
-	dump(out, bobl::cbor::make_iterator_range<bobl::flyweight::Any>(begin, end));
+	BOOST_CHECK_EXCEPTION(dump(out, bobl::cbor::make_iterator_range<bobl::flyweight::Any>(begin, end)), bobl::InvalidObject, CheckMessage{ "CBOR: to many object to decode" });
+
 }
 
 BOOST_AUTO_TEST_CASE(Sample1Test)

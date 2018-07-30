@@ -1,4 +1,5 @@
 #include <boost/test/unit_test.hpp>
+#include "test_hlp.hpp"
 #include "bobl/bson/iterator.hpp"
 #include "bobl/bson/cast.hpp"
 #include "bobl/bson/decode.hpp"

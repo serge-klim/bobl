@@ -2,6 +2,7 @@
 #include "bobl/cbor/cast.hpp"
 #include "bobl/cbor/decode.hpp"
 #include "tests.hpp"
+#include "test_hlp.hpp"
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid.hpp>
@@ -61,6 +62,182 @@ BOOST_AUTO_TEST_CASE(SimpleTest)
 	BOOST_CHECK_EQUAL(begin, end);
 }
 
+BOOST_AUTO_TEST_CASE(SimpleExacMatchTest)
+{
+	//{'enabled': True, 'id': 100, 'name': 'the name', 'theEnum': 2}
+	//(38) : b'\xa4genabled\xf5bid\x18ddnamehthe namegtheEnum\x02'
+	std::uint8_t data[] = { 0xa4, 0x67, 0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x64, 0xf5, 0x62, 0x69, 
+							0x64, 0x18, 0x64, 0x64, 0x6e, 0x61, 0x6d, 0x65, 0x68, 0x74, 0x68, 0x65, 
+							0x20, 0x6e, 0x61, 0x6d, 0x65, 0x67, 0x74, 0x68, 0x65, 0x45, 0x6e, 0x75, 
+							0x6d, 0x2 };
+	uint8_t const* begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	auto simple = bobl::cbor::decode<Simple, bobl::Options<bobl::options::ExacMatch>>(begin, end);
+	BOOST_CHECK(simple.enabled);
+	BOOST_CHECK_EQUAL(simple.id, 100);
+	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
+	BOOST_CHECK_EQUAL(int(simple.theEnum), 2);
+	BOOST_CHECK_EQUAL(begin, end);
+}
+
+
+BOOST_AUTO_TEST_CASE(SimpleAsDictionaryTest)
+{
+	//{'enabled': True, 'id': 100, 'name': 'the name', 'theEnum': 2}
+	//(38) : b'\xa4genabled\xf5bid\x18ddnamehthe namegtheEnum\x02'
+	std::uint8_t data[] = { 0xa4, 0x67, 0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x64, 0xf5, 0x62, 0x69, 
+							0x64, 0x18, 0x64, 0x64, 0x6e, 0x61, 0x6d, 0x65, 0x68, 0x74, 0x68, 0x65, 
+							0x20, 0x6e, 0x61, 0x6d, 0x65, 0x67, 0x74, 0x68, 0x65, 0x45, 0x6e, 0x75, 
+							0x6d, 0x2 };
+	uint8_t const* begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	auto simple = bobl::cbor::decode<Simple, bobl::Options<bobl::options::StructAsDictionary>>(begin, end);
+	BOOST_CHECK(simple.enabled);
+	BOOST_CHECK_EQUAL(simple.id, 100);
+	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
+	BOOST_CHECK_EQUAL(int(simple.theEnum), 2);
+	BOOST_CHECK_EQUAL(begin, end);
+}
+
+BOOST_AUTO_TEST_CASE(SimpleAsDictionaryExacMatchTest)
+{
+	//{'enabled': True, 'id': 100, 'name': 'the name', 'theEnum': 2}
+	//(38) : b'\xa4genabled\xf5bid\x18ddnamehthe namegtheEnum\x02'
+	std::uint8_t data[] = { 0xa4, 0x67, 0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x64, 0xf5, 0x62, 0x69, 
+							0x64, 0x18, 0x64, 0x64, 0x6e, 0x61, 0x6d, 0x65, 0x68, 0x74, 0x68, 0x65, 
+							0x20, 0x6e, 0x61, 0x6d, 0x65, 0x67, 0x74, 0x68, 0x65, 0x45, 0x6e, 0x75, 
+							0x6d, 0x2 };
+	uint8_t const* begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	auto simple = bobl::cbor::decode<Simple, bobl::Options<bobl::options::ExacMatch, bobl::options::StructAsDictionary>>(begin, end);
+	BOOST_CHECK(simple.enabled);
+	BOOST_CHECK_EQUAL(simple.id, 100);
+	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
+	BOOST_CHECK_EQUAL(int(simple.theEnum), 2);
+	BOOST_CHECK_EQUAL(begin, end);
+}
+
+BOOST_AUTO_TEST_CASE(SimpleDifferentOrderTest)
+{
+    //{'theEnum': 2, 'id': 100, 'enabled': True, 'name': 'the name', 'xtra1': 2}
+    //(45):b'\xa5gtheEnum\x02bid\x18dgenabled\xf5dnamehthe nameextra1\x02'
+    std::uint8_t data[] = {0xa5, 0x67, 0x74, 0x68, 0x65, 0x45, 0x6e, 0x75, 0x6d,
+                           0x2,  0x62, 0x69, 0x64, 0x18, 0x64, 0x67, 0x65, 0x6e,
+                           0x61, 0x62, 0x6c, 0x65, 0x64, 0xf5, 0x64, 0x6e, 0x61,
+                           0x6d, 0x65, 0x68, 0x74, 0x68, 0x65, 0x20, 0x6e, 0x61,
+                           0x6d, 0x65, 0x65, 0x78, 0x74, 0x72, 0x61, 0x31, 0x2};
+
+	uint8_t const* begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	BOOST_CHECK_EXCEPTION((bobl::cbor::decode<Simple, bobl::options::None>(begin, end)), bobl::InvalidObject, CheckMessage{ "unexpected CBOR object name : \"theEnum\" (expected \"enabled\")" });
+}
+
+BOOST_AUTO_TEST_CASE(SimpleDifferentOrderAsDictionaryTest)
+{
+    //{'theEnum': 2, 'id': 100, 'enabled': True, 'name': 'the name', 'xtra1': 2}
+    //(45):b'\xa5gtheEnum\x02bid\x18dgenabled\xf5dnamehthe nameextra1\x02'
+    std::uint8_t data[] = {0xa5, 0x67, 0x74, 0x68, 0x65, 0x45, 0x6e, 0x75, 0x6d,
+                           0x2,  0x62, 0x69, 0x64, 0x18, 0x64, 0x67, 0x65, 0x6e,
+                           0x61, 0x62, 0x6c, 0x65, 0x64, 0xf5, 0x64, 0x6e, 0x61,
+                           0x6d, 0x65, 0x68, 0x74, 0x68, 0x65, 0x20, 0x6e, 0x61,
+                           0x6d, 0x65, 0x65, 0x78, 0x74, 0x72, 0x61, 0x31, 0x2};
+
+	uint8_t const* begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	auto simple = bobl::cbor::decode<Simple, bobl::Options<bobl::options::StructAsDictionary>>(begin, end);
+	BOOST_CHECK(simple.enabled);
+	BOOST_CHECK_EQUAL(simple.id, 100);
+	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
+	BOOST_CHECK_EQUAL(int(simple.theEnum), 2);
+	BOOST_CHECK_EQUAL(begin, end);
+}
+
+BOOST_AUTO_TEST_CASE(SimplePlusTest)
+{
+	//{'enabled': True, 'id': 100, 'name': 'the name', 'theEnum': 2, 'extra1': 2}
+	//(46):b'\xa5genabled\xf5bid\x18ddnamehthe namegtheEnum\x02fextra1\x02'
+	std::uint8_t data[] = {
+						0xa5, 0x67, 0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x64, 0xf5, 0x62, 0x69,
+						0x64, 0x18, 0x64, 0x64, 0x6e, 0x61, 0x6d, 0x65, 0x68, 0x74, 0x68, 0x65,
+						0x20, 0x6e, 0x61, 0x6d, 0x65, 0x67, 0x74, 0x68, 0x65, 0x45, 0x6e, 0x75,
+						0x6d, 0x2,  0x66, 0x65, 0x78, 0x74, 0x72, 0x61, 0x31, 0x2};
+	uint8_t const* begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	auto simple = bobl::cbor::decode<Simple, bobl::options::None>(begin, end);
+	BOOST_CHECK(simple.enabled);
+	BOOST_CHECK_EQUAL(simple.id, 100);
+	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
+	BOOST_CHECK_EQUAL(int(simple.theEnum), 2);
+	BOOST_CHECK_EQUAL(begin, end);
+}
+
+BOOST_AUTO_TEST_CASE(SimplePlusAsDictionaryTest)
+{
+	//{'enabled': True, 'id': 100, 'name': 'the name', 'theEnum': 2, 'extra1': 2}
+	//(46):b'\xa5genabled\xf5bid\x18ddnamehthe namegtheEnum\x02fextra1\x02'
+	std::uint8_t data[] = {
+						0xa5, 0x67, 0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x64, 0xf5, 0x62, 0x69,
+						0x64, 0x18, 0x64, 0x64, 0x6e, 0x61, 0x6d, 0x65, 0x68, 0x74, 0x68, 0x65,
+						0x20, 0x6e, 0x61, 0x6d, 0x65, 0x67, 0x74, 0x68, 0x65, 0x45, 0x6e, 0x75,
+						0x6d, 0x2,  0x66, 0x65, 0x78, 0x74, 0x72, 0x61, 0x31, 0x2};
+	uint8_t const* begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	auto simple = bobl::cbor::decode<Simple, bobl::Options<bobl::options::StructAsDictionary>>(begin, end);
+	BOOST_CHECK(simple.enabled);
+	BOOST_CHECK_EQUAL(simple.id, 100);
+	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
+	BOOST_CHECK_EQUAL(int(simple.theEnum), 2);
+	BOOST_CHECK_EQUAL(begin, end);
+}
+
+BOOST_AUTO_TEST_CASE(SimplePlusAsDictionaryExacMatchTest)
+{
+	//{'enabled': True, 'id': 100, 'name': 'the name', 'theEnum': 2, 'extra1': 2}
+	//(46):b'\xa5genabled\xf5bid\x18ddnamehthe namegtheEnum\x02fextra1\x02'
+	std::uint8_t data[] = {
+						0xa5, 0x67, 0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x64, 0xf5, 0x62, 0x69,
+						0x64, 0x18, 0x64, 0x64, 0x6e, 0x61, 0x6d, 0x65, 0x68, 0x74, 0x68, 0x65,
+						0x20, 0x6e, 0x61, 0x6d, 0x65, 0x67, 0x74, 0x68, 0x65, 0x45, 0x6e, 0x75,
+						0x6d, 0x2,  0x66, 0x65, 0x78, 0x74, 0x72, 0x61, 0x31, 0x2};
+	uint8_t const* begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	BOOST_CHECK_EXCEPTION( (bobl::cbor::decode<Simple, bobl::Options<bobl::options::ExacMatch, bobl::options::StructAsDictionary>>(begin, end)), bobl::InvalidObject, CheckMessage{ "unexpected key \"extra1\" found in the dictionary" });
+}
+
+
+BOOST_AUTO_TEST_CASE(SimplePlusExacMatchTest)
+{
+	//{'enabled': True, 'id': 100, 'name': 'the name', 'theEnum': 2, 'extra1': 2}
+	//(46):b'\xa5genabled\xf5bid\x18ddnamehthe namegtheEnum\x02fextra1\x02'
+	std::uint8_t data[] = {
+						0xa5, 0x67, 0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x64, 0xf5, 0x62, 0x69,
+						0x64, 0x18, 0x64, 0x64, 0x6e, 0x61, 0x6d, 0x65, 0x68, 0x74, 0x68, 0x65,
+						0x20, 0x6e, 0x61, 0x6d, 0x65, 0x67, 0x74, 0x68, 0x65, 0x45, 0x6e, 0x75,
+						0x6d, 0x2,  0x66, 0x65, 0x78, 0x74, 0x72, 0x61, 0x31, 0x2};
+	uint8_t const* begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	BOOST_CHECK_EXCEPTION( (bobl::cbor::decode<Simple, bobl::Options<bobl::options::ExacMatch>>(begin, end)), bobl::InvalidObject, CheckMessage{ "CBOR dictionary contains more objects than expected" });
+}
+
+BOOST_AUTO_TEST_CASE(SimpleIndefiniteLengthsTest)
+{
+	//{'enabled': True, 'id': 100, 'name': 'the name', 'theEnum': 2}
+	//(38) : b'\xa4genabled\xf5bid\x18ddnamehthe namegtheEnum\x02'
+	std::uint8_t data[] = { 0xbf, 0x67, 0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x64, 0xf5, 0x62, 0x69, 
+							0x64, 0x18, 0x64, 0x64, 0x6e, 0x61, 0x6d, 0x65, 0x68, 0x74, 0x68, 0x65, 
+							0x20, 0x6e, 0x61, 0x6d, 0x65, 0x67, 0x74, 0x68, 0x65, 0x45, 0x6e, 0x75, 
+							0x6d, 0x2, 0xff };
+	uint8_t const* begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	auto simple = bobl::cbor::decode<Simple, bobl::options::None>(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
+	BOOST_CHECK(simple.enabled);
+	BOOST_CHECK_EQUAL(simple.id, 100);
+	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
+	BOOST_CHECK_EQUAL(int(simple.theEnum), 2);
+}
+
+
 BOOST_AUTO_TEST_CASE(SimpleBrokenTest)
 {
 	//{'simple': {'enabled': True, 'id': 100, 'name': 'the name'}, 'theEnum': 2}
@@ -73,16 +250,25 @@ BOOST_AUTO_TEST_CASE(SimpleBrokenTest)
 
 	uint8_t const* begin = data;
 	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
-	auto res = bobl::cbor::decode<std::tuple<Simple>>(begin, end);
-	auto simple = std::get<0>(res);
-	BOOST_CHECK(simple.enabled);
-	BOOST_CHECK_EQUAL(simple.id, 100);
-	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
-	BOOST_CHECK_EQUAL(int(simple.theEnum), 2);
-	BOOST_CHECK_EQUAL(begin, end);
+	BOOST_CHECK_EXCEPTION(bobl::cbor::decode<std::tuple<Simple>>(begin, end), bobl::InputToShort, CheckMessage{ "not enought data to decode CBOR value type" });
 }
 
-BOOST_AUTO_TEST_CASE(SimpleOptioonalTest)
+BOOST_AUTO_TEST_CASE(SimpleIndefiniteLengthsBrokenTest)
+{
+	//{'simple': {'enabled': True, 'id': 100, 'name': 'the name'}, 'theEnum': 2}
+	//(46):b'\xa2fsimple\xa3genabled\xf5bid\x18ddnamehthe namegtheEnum\x02'
+	std::uint8_t data[] = {
+						0xa2, 0x66, 0x73, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0xbf, 0x67, 0x65, 0x6e,
+						0x61, 0x62, 0x6c, 0x65, 0x64, 0xf5, 0x62, 0x69, 0x64, 0x18, 0x64, 0x64,
+						0x6e, 0x61, 0x6d, 0x65, 0x68, 0x74, 0x68, 0x65, 0x20, 0x6e, 0x61, 0x6d,
+						0x65, 0xff, 0x67, 0x74, 0x68, 0x65, 0x45, 0x6e, 0x75, 0x6d, 0x2};
+
+	uint8_t const* begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	BOOST_CHECK_EXCEPTION((bobl::cbor::decode<Simple, bobl::options::None>(begin, end)), bobl::InvalidObject, CheckMessage{ "unexpected CBOR object name : \"simple\" (expected \"enabled\")" });
+}
+
+BOOST_AUTO_TEST_CASE(SimpleOptionalTest)
 {
 	//{'enabled': True, 'id': 100, 'name': 'the name', 'theEnum': 2}
 	//(38) : b'\xa4genabled\xf5bid\x18ddnamehthe namegtheEnum\x02'

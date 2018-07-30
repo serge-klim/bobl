@@ -238,7 +238,7 @@ public:
 	{
 		auto name = bobl::json::parser::Name::parse(begin, end);
 		if (!ename.compare(name))
-			throw bobl::IncorrectObjectName{ str(boost::format("unexpected JSON object name : \"%1%\" (expected \"%2%\").") % name % ename.name()) };
+			throw bobl::IncorrectObjectName{ str(boost::format("unexpected JSON object name : \"%1%\" (expected \"%2%\")") % name % ename.name()) };
 
 		using Decoder = typename Decoder<T, Options>::type;
 		return { std::move(name), Decoder::decode(begin, end) };

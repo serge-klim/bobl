@@ -5,6 +5,7 @@
 #include "bobl/cbor/details/options.hpp"
 #include "bobl/cbor/adapter.hpp"
 #include "bobl/cbor/cbor.hpp"
+#include "bobl/utility/encoders.hpp"
 #include "bobl/utility/type_name.hpp"
 #include "bobl/utility/nvariant.hpp"
 #include "bobl/utility/timepoint.hpp"
@@ -199,7 +200,8 @@ public:
 	template<typename Iterator>
 	static Iterator encode(Iterator out, T const& sequence)
 	{
-		out = bobl::cbor::utility::encode::unsigned_int(out, bobl::cbor::MajorType::Dictionary, std::size_t(boost::fusion::result_of::size<T>::value));
+		auto n = bobl::utility::CountMembers<bobl::cbor::NsTag, T, Options>{}(sequence);
+		out = bobl::cbor::utility::encode::unsigned_int(out, bobl::cbor::MajorType::Dictionary, n);
 		return encode<0>(out, sequence);
 	}
 private:
