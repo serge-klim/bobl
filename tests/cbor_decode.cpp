@@ -43,6 +43,47 @@ BOOST_AUTO_TEST_CASE(OptionalTest)
 	BOOST_CHECK_EQUAL(begin, end);
 }
 
+BOOST_AUTO_TEST_CASE(StringTest)
+{
+	//{'enabled': True, 'id': 100, 'name': 'the name', 'theEnum': 2}
+	//(38) : b'\xa4genabled\xf5bid\x18ddnamehthe namegtheEnum\x02'
+	std::uint8_t data[] = { 0x67, 0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x64 };
+	uint8_t const* begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	auto res = bobl::cbor::decode<std::string>(begin, end);
+	BOOST_CHECK_EQUAL(res, "enabled");
+}
+
+BOOST_AUTO_TEST_CASE(StringBrokenTest)
+{
+	//{'enabled': True, 'id': 100, 'name': 'the name', 'theEnum': 2}
+	//(38) : b'\xa4genabled\xf5bid\x18ddnamehthe namegtheEnum\x02'
+	std::uint8_t data[] = { 0x67, 0x65, 0x6e, 0x61 /*, 0x62, 0x6c, 0x65, 0x64*/ };
+	uint8_t const* begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	BOOST_CHECK_EXCEPTION(bobl::cbor::decode<std::string>(begin, end), bobl::InvalidObject, CheckMessage{ "not enough data provided to decode CBOR string" });
+}
+
+BOOST_AUTO_TEST_CASE(StringIndefiniteLengthsTest)
+{
+	//{'enabled': True, 'id': 100, 'name': 'the name', 'theEnum': 2}
+	//(38) : b'\xa4genabled\xf5bid\x18ddnamehthe namegtheEnum\x02'
+	std::uint8_t data[] = { 0x7f, 0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x64, 0xff };
+	uint8_t const* begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	auto res = bobl::cbor::decode<std::string>(begin, end);
+	BOOST_CHECK_EQUAL(res, "enabled");
+}
+
+BOOST_AUTO_TEST_CASE(StringIndefiniteLengthsBrokenTest)
+{
+	//{'enabled': True, 'id': 100, 'name': 'the name', 'theEnum': 2}
+	//(38) : b'\xa4genabled\xf5bid\x18ddnamehthe namegtheEnum\x02'
+	std::uint8_t data[] = { 0x7f, 0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x64/*, 0xff*/ };
+	uint8_t const* begin = data;
+	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
+	BOOST_CHECK_EXCEPTION(bobl::cbor::decode<std::string>(begin, end), bobl::InvalidObject, CheckMessage{ "not enough data provided to decode indefinite length CBOR string" });
+}
 
 BOOST_AUTO_TEST_CASE(SimpleTest)
 {
@@ -288,7 +329,7 @@ BOOST_AUTO_TEST_CASE(SimpleOptionalTest)
 	BOOST_CHECK_EQUAL(!simple.name, false);
 	BOOST_CHECK_EQUAL(simple.name.get(), std::string{ "the name" });
 	BOOST_CHECK_EQUAL(!simple.theEnum, false);
-	BOOST_CHECK(simple.theEnum.get() == TheEnumClass::Two);
+	BOOST_CHECK(simple.theEnum.get() == EnumClass::Two);
 	BOOST_CHECK(!simple.dummy1);
 	BOOST_CHECK(!simple.dummy2);
 	BOOST_CHECK(!simple.dummy3);
@@ -309,7 +350,7 @@ BOOST_AUTO_TEST_CASE(SimpleXTest)
 	BOOST_CHECK(boost::get<bool>(simple.enabled));
 	BOOST_CHECK_EQUAL(simple.id, 100);
 	BOOST_CHECK_EQUAL(boost::get<std::string>(simple.name), std::string{ "the name" });
-	BOOST_CHECK_EQUAL(int(boost::get<TheEnumClass>(simple.theEnum)), 2);
+	BOOST_CHECK_EQUAL(int(boost::get<EnumClass>(simple.theEnum)), 2);
 	BOOST_CHECK_EQUAL(begin, end);
 }
 

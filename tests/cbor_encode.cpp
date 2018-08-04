@@ -32,9 +32,10 @@ BOOST_AUTO_TEST_CASE(EncodeToBufferTest)
 	BOOST_CHECK_EQUAL(int(simple.theEnum), 2);
 }
 
+
 BOOST_AUTO_TEST_CASE(EncodeTupleTest)
 {
-	auto value = std::make_tuple(true, 100, std::string{ "the name" }, TheEnumClass::One, TheEnumClass::Two);
+	auto value = std::make_tuple(true, 100, std::string{ "the name" }, EnumClass::One, EnumClass::Two);
 	static_assert(!bobl::utility::NamedSequence<decltype(value), typename bobl::cbor::EffectiveOptions<decltype(value), bobl::options::None>::type>::value, "not supposed to be named sequence");
 	static_assert(bobl::utility::NamedSequence<decltype(value), typename bobl::cbor::EffectiveOptions<decltype(value), bobl::options::UsePositionAsName>::type>::value, "supposed to be named sequence");
 	auto data = bobl::cbor::encode<bobl::options::UsePositionAsName>(value);
@@ -59,11 +60,11 @@ BOOST_AUTO_TEST_CASE(EncodeTupleTest)
 	++i;
 	BOOST_CHECK_EQUAL(i->name(), std::string{ "_3" });
 	BOOST_CHECK_EQUAL(bobl::cbor::cast<int>(i->value()), 1);
-	BOOST_CHECK(bobl::cbor::cast<TheEnumClass>(i->value()) == TheEnumClass::One);
+	BOOST_CHECK(bobl::cbor::cast<EnumClass>(i->value()) == EnumClass::One);
 	++i;
 	BOOST_CHECK_EQUAL(i->name(), std::string{ "_4" });
 	BOOST_CHECK_EQUAL(bobl::cbor::cast<int>(i->value()), 2);
-	BOOST_CHECK(bobl::cbor::cast<TheEnumClass>(i->value()) == TheEnumClass::Two);
+	BOOST_CHECK(bobl::cbor::cast<EnumClass>(i->value()) == EnumClass::Two);
 	{
 		auto begin = data.data();
 		auto end = begin + data.size();
@@ -79,7 +80,7 @@ BOOST_AUTO_TEST_CASE(EncodeTupleTest)
 
 BOOST_AUTO_TEST_CASE(EncodeNamedTupleTest)
 {
-	auto value = std::make_tuple(true, 100, std::string{ "the name" }, TheEnumClass::Two);
+	auto value = std::make_tuple(true, 100, std::string{ "the name" }, EnumClass::Two);
 	static_assert(std::is_same<SimpleTuple, decltype(value)>::value, "these types supposed to be the same");
 	auto data = bobl::cbor::encode(value);
 	auto begin = data.data();
@@ -91,6 +92,47 @@ BOOST_AUTO_TEST_CASE(EncodeNamedTupleTest)
 	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
 	BOOST_CHECK_EQUAL(int(simple.theEnum), 2);
 }
+
+
+BOOST_AUTO_TEST_CASE(SupportedTypesTest)
+{
+	auto types = SupportedTypes
+							{
+							  true,
+							  1,
+							  "some name",
+							  {false, 303, "the name", Enum::One },
+							  {1,2,3},
+							  {
+								  {true, 1, "first", Enum::One },
+								  {false, 2, "second", Enum::Two },
+							  },
+							  101,
+							  boost::uuids::string_generator{}("4E983010-FA64-4BAA-ABED-DD82FD691D18"),
+							  EnumClass::Three,
+							  {0x1,0x2, 0x3},
+							  std::chrono::system_clock::now()
+							};
+	auto data =  bobl::cbor::encode(types);
+	auto begin = data.data();
+	auto end = begin + data.size();
+	auto res = bobl::cbor::decode<SupportedTypes>(begin, end);
+	BOOST_CHECK_EQUAL(begin, end);
+	BOOST_CHECK(res.enabled);
+	BOOST_CHECK_EQUAL(res.name, std::string{ "some name" });
+
+	BOOST_CHECK(!res.simple.enabled);
+	BOOST_CHECK_EQUAL(res.id, 1);
+	BOOST_CHECK_EQUAL(res.simple.id, 303);
+	BOOST_CHECK_EQUAL(res.simple.name, std::string{ "the name" });
+	BOOST_CHECK_EQUAL(int(res.simple.theEnum), 1);
+
+	BOOST_CHECK_EQUAL_COLLECTIONS(std::begin(res.ints), std::end(res.ints), std::begin(types.ints), std::end(types.ints));
+	//BOOST_CHECK_EQUAL_COLLECTIONS(std::begin(res.simples), std::end(res.simples), std::begin(types.simples), std::end(types.simples));
+	BOOST_CHECK_EQUAL(types.uuid, res.uuid);
+	BOOST_CHECK_EQUAL_COLLECTIONS(std::begin(res.binary), std::end(res.binary), std::begin(types.binary), std::end(types.binary));
+}
+
 
 BOOST_AUTO_TEST_CASE(LongLongIntegersTest)
 {
@@ -514,7 +556,7 @@ BOOST_AUTO_TEST_CASE(OptionalStructTest)
 	auto value = SimpleOptional{};
 	value.id = 101;
 	value.name = "the name";
-	value.theEnum = TheEnumClass::Two;
+	value.theEnum = EnumClass::Two;
 	auto strings = std::vector<std::string>{"zero","one", "two", "three"};
 	value.dummy2 = strings;
 	auto data = bobl::cbor::encode(value);
@@ -551,7 +593,7 @@ BOOST_AUTO_TEST_CASE(EmptySimpleXTest)
 	BOOST_CHECK(boost::get<std::string>(simple.enabled).empty());
 //	BOOST_CHECK_EQUAL(simple.id, 100);
 	BOOST_CHECK_EQUAL(boost::get<int>(simple.name), 0);
-	BOOST_CHECK(boost::get<TheEnumClass>(simple.theEnum) == TheEnumClass::None);
+	BOOST_CHECK(boost::get<EnumClass>(simple.theEnum) == EnumClass::None);
 }
 
 
@@ -741,7 +783,7 @@ BOOST_AUTO_TEST_CASE(OptionalAsNullTest)
 	BOOST_CHECK_EQUAL(decoded.id, data.id);
 
 	begin = encoded.data();
-	auto decoded_tuple = bobl::cbor::decode<boost::optional<TheEnumClass>, boost::optional<int>>(begin, end);
+	auto decoded_tuple = bobl::cbor::decode<boost::optional<EnumClass>, boost::optional<int>>(begin, end);
 	BOOST_CHECK(!std::get<0>(decoded_tuple));
 	BOOST_CHECK_EQUAL(std::get<1>(decoded_tuple).get(), 123);
 }
@@ -757,12 +799,12 @@ BOOST_AUTO_TEST_CASE(OptionalTest)
 	BOOST_CHECK_EQUAL(decoded.id, data.id);
 
 	begin = encoded.data();
-	auto decoded_tuple = bobl::cbor::decode<boost::optional<TheEnumClass>, boost::optional<int>>(begin, end);
+	auto decoded_tuple = bobl::cbor::decode<boost::optional<EnumClass>, boost::optional<int>>(begin, end);
 	BOOST_CHECK_EQUAL(int(std::get<0>(decoded_tuple).get()), 123);
 	BOOST_CHECK(!std::get<1>(decoded_tuple));
 
 	begin = encoded.data();
-	BOOST_CHECK_THROW((bobl::cbor::decode<diversion::optional<TheEnumClass>, int>(begin, end)), bobl::InputToShort);
+	BOOST_CHECK_THROW((bobl::cbor::decode<diversion::optional<EnumClass>, int>(begin, end)), bobl::InputToShort);
 }
 
 

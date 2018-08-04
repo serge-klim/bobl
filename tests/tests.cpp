@@ -111,9 +111,9 @@ void decode_parameters_compiletime_test()
 
 void adapter_compiletime_test()
 {
-	static_assert(std::is_same<bobl::Adapter<TheEnum>::type, std::underlying_type<TheEnum>::type>::value, "seems bobl::Adapter doesn't work as expected");
+	static_assert(std::is_same<bobl::Adapter<Enum>::type, std::underlying_type<Enum>::type>::value, "seems bobl::Adapter doesn't work as expected");
 	static_assert(!bobl::utility::Adaptable<int, bobl::Adapter<int>>::value, "seems bobl::utility::utility::decode::Adaptable doesn't work as expected");
-	static_assert(bobl::utility::Adaptable<TheEnum, bobl::Adapter<TheEnum>>::value, "seems bobl::utility::utility::decode::Adaptable doesn't work as expected");
+	static_assert(bobl::utility::Adaptable<Enum, bobl::Adapter<Enum>>::value, "seems bobl::utility::utility::decode::Adaptable doesn't work as expected");
 }
 
 BOOST_AUTO_TEST_CASE(UtilityCompileTimeTest)
@@ -164,7 +164,7 @@ void named_sequence_compiletime_test()
 BOOST_AUTO_TEST_CASE(MemberNameTest)
 {
 	named_sequence_compiletime_test();
-	using MemberName = typename bobl::utility::GetNameType<bobl::MemberName<Simple, TheEnum, 3, bobl::options::None>>::type;
+	using MemberName = typename bobl::utility::GetNameType<bobl::MemberName<Simple, Enum, 3, bobl::options::None>>::type;
 	BOOST_CHECK_EQUAL(MemberName{}.name(),"theEnum");
 	BOOST_CHECK(MemberName{}.compare(std::string{ "theEnum" }));
 

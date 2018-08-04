@@ -7,6 +7,8 @@
 #include "bobl/bson/encode.hpp"
 #include "bobl/bobl.hpp"
 #include <boost/format.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <string>
 #include <vector>
@@ -294,6 +296,33 @@ BOOST_AUTO_TEST_CASE(UUIDVectorTest)
 
 	uint8_t const *begin = data;
 	uint8_t const *end = begin + sizeof(data) / sizeof(data[0]);
+	auto doc = bobl::bson::flyweight::Document::decode(begin, end);
+	std::stringstream out;
+	dump_object(out, bobl::bson::make_iterator_range<bobl::flyweight::NameValue<bobl::flyweight::Any>>(doc));
+}
+
+BOOST_AUTO_TEST_CASE(SupportedTypesTest)
+{
+	auto types = SupportedTypes
+							{
+							  true,
+							  1,
+							  "some name",
+							  {false, 303, "the name", Enum::One },
+							  {1,2,3},
+							  {
+								  {true, 1, "first", Enum::One },
+								  {false, 2, "second", Enum::Two },
+							  },
+							  101,
+							  boost::uuids::string_generator{}("4E983010-FA64-4BAA-ABED-DD82FD691D18"),
+							  EnumClass::Three,
+							  {0x1,0x2, 0x3},
+							  std::chrono::system_clock::now()
+							};
+	auto data =  bobl::bson::encode(types);
+	auto begin = data.data();
+	auto end = begin + data.size();
 	auto doc = bobl::bson::flyweight::Document::decode(begin, end);
 	std::stringstream out;
 	dump_object(out, bobl::bson::make_iterator_range<bobl::flyweight::NameValue<bobl::flyweight::Any>>(doc));

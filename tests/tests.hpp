@@ -6,16 +6,17 @@
 #include <boost/fusion/adapted/struct/adapt_struct.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/cstdfloat.hpp>
+#include <chrono>
 #include <vector>
 #include <string>
 #include <cstdint>
 
-enum TheEnum
+enum Enum
 {
 	None, One, Two, Three
 };
 
-enum class TheEnumClass
+enum class EnumClass
 {
     None, One, Two, Three
 };
@@ -30,7 +31,7 @@ struct Simple
 	bool enabled;
     int id;
 	std::string name;
-	TheEnum theEnum;
+	Enum theEnum;
 };
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -40,7 +41,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 	name,
 	theEnum)
 
-using SimpleTuple = std::tuple<bool, int, std::string, TheEnumClass>;
+using SimpleTuple = std::tuple<bool, int, std::string, EnumClass>;
 
 namespace bobl{
 
@@ -75,7 +76,7 @@ struct SimpleOptional
 	diversion::optional<bool> enabled;
 	diversion::optional<int> id;
 	diversion::optional<std::string> name;
-	diversion::optional<TheEnumClass> theEnum;
+	diversion::optional<EnumClass> theEnum;
 	diversion::optional<std::string> dummy1;
 	diversion::optional<std::vector<std::string>> dummy2;
 	diversion::optional<std::vector<Simple>> dummy3;
@@ -95,8 +96,8 @@ struct SimpleVariant
 {
 	diversion::variant<std::string, int, bool> enabled;
     int id;
-	diversion::variant<int, TheEnum, std::string> name;
-	diversion::variant<TheEnumClass> theEnum;
+	diversion::variant<int, Enum, std::string> name;
+	diversion::variant<EnumClass> theEnum;
 };
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -345,10 +346,38 @@ BOOST_FUSION_ADAPT_STRUCT(
 
 struct SimpleOptionalTest
 {
-	diversion::optional<TheEnumClass> type; //will be encoded as int
+	diversion::optional<EnumClass> type; //will be encoded as int
 	int id;
 };
 
 BOOST_FUSION_ADAPT_STRUCT(SimpleOptionalTest, type, id)
 
+struct SupportedTypes
+{
+	bool enabled;
+	int id;
+	std::string name;
+	Simple simple;
+	std::vector<int> ints;
+	std::vector<Simple> simples;
+	boost::variant<int,Simple, std::string, std::vector<Simple>> var;
+	boost::uuids::uuid uuid;
+	boost::optional<EnumClass> enm;
+	std::vector<std::uint8_t> binary; // this will be encoded as binary object
+	std::chrono::system_clock::time_point tp;
+};
+
+BOOST_FUSION_ADAPT_STRUCT(
+			SupportedTypes,
+			enabled,
+			id,
+			name,
+			simple,
+			ints,
+			simples,
+			var,
+			uuid,
+			enm,
+			binary,
+			tp)
 

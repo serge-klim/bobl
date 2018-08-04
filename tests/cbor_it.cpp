@@ -7,6 +7,8 @@
 #include "bobl/cbor/encode.hpp"
 #include "bobl/bobl.hpp"
 #include <boost/format.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <string>
 #include <vector>
@@ -158,8 +160,6 @@ std::ostream& dump_object(std::ostream& out, boost::iterator_range<Iterator> con
 template<typename Iterator>
 std::ostream& dump(std::ostream& out, boost::iterator_range<Iterator> const& range)
 {
-	std::stringstream cur;
-	std::stringstream fus;
 	for (auto const& any : range)
 		dump(out, any);
 	return out;
@@ -339,6 +339,32 @@ BOOST_AUTO_TEST_CASE(FloatArrayTest)
 
 	auto begin = data;
 	auto end = begin + sizeof(data) / sizeof(data[0]);
+	std::stringstream out;
+	dump(out, bobl::cbor::make_iterator_range<bobl::flyweight::Any>(begin, end));
+}
+
+BOOST_AUTO_TEST_CASE(SupportedTypesTest)
+{
+	auto types = SupportedTypes
+							{
+							  true,
+							  1,
+							  "some name",
+							  {false, 303, "the name", Enum::One },
+							  {1,2,3},
+							  {
+								  {true, 1, "first", Enum::One },
+								  {false, 2, "second", Enum::Two },
+							  },
+							  101,
+							  boost::uuids::string_generator{}("4E983010-FA64-4BAA-ABED-DD82FD691D18"),
+							  EnumClass::Three,
+							  {0x1,0x2, 0x3},
+							  std::chrono::system_clock::now()
+							};
+	auto data =  bobl::cbor::encode(types);
+	auto begin = data.data();
+	auto end = begin + data.size();
 	std::stringstream out;
 	dump(out, bobl::cbor::make_iterator_range<bobl::flyweight::Any>(begin, end));
 }

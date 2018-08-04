@@ -40,17 +40,15 @@ lets say that there is encoded bson object:
 ```
 it can be decoded into std::tuple like this:
 ```
-    	std::tuple<bool, int, std::string, int> res = bobl::bson::decode<std::tuple<bool, int, std::string, int>>(begin, end);
+    	std::tuple<bool, int, std::string, int> res = protocol::decode<std::tuple<bool, int, std::string, int>>(begin, end);
 ```
 or std::tuple in decode can be omited:
 ```
-    	std::tuple<bool, int, std::string, int> res = bobl::bson::decode<bool, int, std::string, int>(begin, end);
+    	std::tuple<bool, int, std::string, int> res = protocol::decode<bool, int, std::string, int>(begin, end);
 ```
 BSON complete example: [simple1.cpp](https://github.com/serge-klim/bobl/blob/master/examples/bson/simple1.cpp)    
 CBOR complete example: [simple1.cpp](https://github.com/serge-klim/bobl/blob/master/examples/cbor/simple1.cpp)
 ```
-    #include "bobl/bson/decode.hpp"
-
 	std::uint8_t data[] = {
 		0x37, 0x0,  0x0,  0x0,  0x8,  0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65,
 		0x64, 0x0,  0x1,  0x10, 0x69, 0x64, 0x0,  0x64, 0x0,  0x0,  0x0,
@@ -60,18 +58,18 @@ CBOR complete example: [simple1.cpp](https://github.com/serge-klim/bobl/blob/mas
 
 	uint8_t const* begin = data;
 	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
-	auto res = bobl::bson::decode<bool, int, std::string, TheEnumClass>(begin, end);
+	auto res = protocol::decode<bool, int, std::string, EnumClass>(begin, end);
 ```
 using tuples for complex types might be not really good idea that's where [Boost.Fusion](https://www.boost.org/doc/libs/1_50_0/libs/fusion/doc/html/fusion/adapted/adapt_struct.html) can be very useful, it allows adapt structure to heterogeneous container. So above could be decoded like this:
 ```
-enum class TheEnumClass { None, One, Two, Three };
+enum class EnumClass { None, One, Two, Three };
 
 struct Simple
 {
   bool enabled;
   int id;
   std::string name;
-  TheEnumClass theEnum;
+  EnumClass theEnum;
 };
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -81,12 +79,12 @@ BOOST_FUSION_ADAPT_STRUCT(
   name,
   theEnum)
 
-Simple simple = bobl::bson::decode<Simple>(begin, end);
+Simple simple = protocol::decode<Simple>(begin, end);
 ```
 as well as encoded:
 
 ```
-std::vector<std::uint8_t> blob = bobl::bson::encode(simple);
+std::vector<std::uint8_t> blob = protocol::encode(simple);
 ```
 BSON complete example: [simple3.cpp](https://github.com/serge-klim/bobl/blob/master/examples/bson/simple3.cpp)  
 CBOR complete example: [simple3.cpp](https://github.com/serge-klim/bobl/blob/master/examples/cbor/simple3.cpp)
@@ -95,8 +93,8 @@ CBOR complete example: [simple3.cpp](https://github.com/serge-klim/bobl/blob/mas
 std::tuple also can be encoded, but BSON requires names for objects. In case of adapted structures, member name became appropriate object name. With tuples some naming needed, to solve it there is few options:
 1. position of tuple element can be used as an element name:
 ```
-	auto value = std::make_tuple(true, 100, std::string{ "the name" }, TheEnumClass::Two);
-	auto data = bobl::bson::encode<bobl::options::UsePositionAsName>(value);
+	auto value = std::make_tuple(true, 100, std::string{ "the name" }, EnumClass::Two);
+	auto data = protocol::encode<bobl::options::UsePositionAsName>(value);
 ```
 The resulting object will look like this `{"_0": True, "_1": 100, "_2": "the name", "_3": 2}` pseudo-json representation.  
 2. another way to name tupple element is specialize `bobl::MemberName` class declared in [`bobl/names.hpp`](https://github.com/serge-klim/bobl/blob/master/bobl/names.hpp) header :
@@ -142,7 +140,7 @@ so encode on tuple would work the same way as it does on [Boost.Fusion](https://
 
 ``` 
   auto tuple = std::make_tuple(true, 100, std::string{ "the name" }, Enum::Two);
-  auto data = bobl::bson::encode(tuple);
+  auto data = protocol::encode(tuple);
 ```
 BSON complete example: [named\_tuple.cpp](https://github.com/serge-klim/bobl/blob/master/examples/bson/named_tuple.cpp)  
 CBOR complete example: [named\_tuple.cpp](https://github.com/serge-klim/bobl/blob/master/examples/cbor/named_tuple.cpp)
@@ -177,7 +175,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 	tp)
 
 	auto extended = Extended{};
-	std::vector<std::uint8_t> encoded =  bobl::bson::encode(extended)
+	std::vector<std::uint8_t> encoded =  protocol::encode(extended)
 ```
 BSON complete example: [extended.cpp](https://github.com/serge-klim/bobl/blob/master/examples/bson/extended.cpp)  
 CBOR complete example: [extended.cpp](https://github.com/serge-klim/bobl/blob/master/examples/cbor/extended.cpp)
@@ -255,7 +253,7 @@ By default encoded/decoded integer type based on its C++ type (not on its value 
 	std::uint8_t data[] = { 0xe, 0x0, 0x0, 0x0, 0x10, 0x69, 0x6e, 0x74, 0x0, 0x1, 0x0, 0x0, 0x0, 0x0 };
 	uint8_t const *begin = data;
 	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
-	std::tuple<std::uint64_t> res = bobl::bson::decode<std::uint64_t, bobl::Options<bobl::options::RelaxedIntegers>>(begin, end);
+	std::tuple<std::uint64_t> res = protocol::decode<std::uint64_t, bobl::Options<bobl::options::RelaxedIntegers>>(begin, end);
 	assert(std::get<0>(res) == 1);
 ```
 ##### Floating point
@@ -292,17 +290,17 @@ struct Data
 BOOST_FUSION_ADAPT_STRUCT(Data, type, id)
 
 	auto data  = Data { {}, 123};
-	std::vector<std::uint8_t> encoded =  bobl::bson::encode(data);
+	std::vector<std::uint8_t> encoded =  protocol::encode(data);
 	auto begin = encoded.data();
 	auto end = begin + encoded.size();
 ```
 this will work as expected:
 ```
-	auto decoded =  bobl::bson::decode<Data>(begin, end);	
+	auto decoded =  protocol::decode<Data>(begin, end);	
 ```
 this on the other hand will throw an exception:
 ```
-	bobl::bson::decode<boost::optional<Type>, int>(begin, end);
+	protocol::decode<boost::optional<Type>, int>(begin, end);
 ```
 Data structure with empty optional member type will be encoded as `{"id":123}` pseudo-json representation. Therefore decoding to unnamed tuple will fail because of integer 123 will be decoded as optional enum class type and required id needs value.  
 
@@ -312,12 +310,12 @@ CBOR complete example: [optional.cpp](https://github.com/serge-klim/bobl/blob/ma
 if decoding in unnamed tuple is required `bobl::options::OptionalAsNull` can be used at encoding:
 ```
 	auto data  = Data { {}, 123};
-	auto encoded =  bobl::bson::encode<bobl::options::OptionalAsNull>(data);
+	auto encoded =  protocol::encode<bobl::options::OptionalAsNull>(data);
 ```
 it will produce: `{"type":null, "id":123}` pseudo-json representation. Which can be decoded in unnamed tuple just fine.
 
 ```
-	auto res = bobl::bson::decode<boost::optional<Type>, int>(begin, end); // ok
+	auto res = protocol::decode<boost::optional<Type>, int>(begin, end); // ok
 ```
 
 #### boost::variant
@@ -329,7 +327,7 @@ For example:
 
 ```
 	auto value =boost::variant<int, Enum>{100};
-	auto data = bobl::bson::encode<bobl::Options<bobl::options::UseTypeName<boost::variant<int, Enum>>>>(value);
+	auto data = protocol::encode<bobl::Options<bobl::options::UseTypeName<boost::variant<int, Enum>>>>(value);
 ```
 
 It will be encoded as `{"int":123}` pseudo-json representation. Type name ("int" in this case) is compiler dependant and generated with `boost::typeindex::type_id<T>().pretty_name()` to customize type-name `bobl::TypeName` class declared in [`bobl/names.hpp`](https://github.com/serge-klim/bobl/blob/master/bobl/names.hpp) header can be specialized.
@@ -338,7 +336,7 @@ It will be encoded as `{"int":123}` pseudo-json representation. Type name ("int"
 If using `bobl::options::UseTypeName<>` is to verbose, the same effect can be achieved  by adding bobl::UseTypeName tag to list of variant types, like this:
 ```
 	auto value = boost::variant<int, Enum, bobl::UseTypeName> {100};
-	auto data = bobl::bson::encode(value);
+	auto data = protocol::encode(value);
 ```
 
 BSON complete example: [variant.cpp](https://github.com/serge-klim/bobl/blob/master/examples/bson/nvariant.cpp)  

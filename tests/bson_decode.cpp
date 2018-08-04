@@ -193,12 +193,12 @@ BOOST_AUTO_TEST_CASE(EnumAdapterTest)
 	uint8_t const *begin = data;
 	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
 	auto doc = bobl::bson::flyweight::Document::decode(begin, end);
-	BOOST_CHECK_EQUAL(bobl::bson::cast<TheEnum>(doc), 1);
-	BOOST_CHECK(bobl::bson::cast<TheEnumClass>(doc) == TheEnumClass::One);
-	BOOST_CHECK_EQUAL(!bobl::bson::cast<diversion::optional<TheEnum>>(doc), false);
-	BOOST_CHECK_EQUAL(bobl::bson::cast<diversion::optional<TheEnum>>(doc).get(), 1);
-	BOOST_CHECK_EQUAL(!bobl::bson::cast<diversion::optional<TheEnumClass>>(doc), false);
-	BOOST_CHECK(bobl::bson::cast<diversion::optional<TheEnumClass>>(doc).get() == TheEnumClass::One);
+	BOOST_CHECK_EQUAL(bobl::bson::cast<Enum>(doc), 1);
+	BOOST_CHECK(bobl::bson::cast<EnumClass>(doc) == EnumClass::One);
+	BOOST_CHECK_EQUAL(!bobl::bson::cast<diversion::optional<Enum>>(doc), false);
+	BOOST_CHECK_EQUAL(bobl::bson::cast<diversion::optional<Enum>>(doc).get(), 1);
+	BOOST_CHECK_EQUAL(!bobl::bson::cast<diversion::optional<EnumClass>>(doc), false);
+	BOOST_CHECK(bobl::bson::cast<diversion::optional<EnumClass>>(doc).get() == EnumClass::One);
 
 	BOOST_CHECK_EQUAL(begin, end);
 }
@@ -616,11 +616,11 @@ BOOST_AUTO_TEST_CASE(RawSimpleTest)
     uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
 	auto doc = bobl::bson::flyweight::Document::decode(begin, end);
 	BOOST_CHECK_EQUAL(begin, end);
-	auto simple = bobl::bson::cast<std::tuple<bool, int, std::string, TheEnumClass>>(doc);
+	auto simple = bobl::bson::cast<std::tuple<bool, int, std::string, EnumClass>>(doc);
 	BOOST_CHECK(std::get<0>(simple));
 	BOOST_CHECK_EQUAL(std::get<1>(simple), 100);
 	BOOST_CHECK_EQUAL(std::get<2>(simple), std::string{ "the name" });
-	BOOST_CHECK(std::get<3>(simple) == TheEnumClass::Two);
+	BOOST_CHECK(std::get<3>(simple) == EnumClass::Two);
 }
 
 BOOST_AUTO_TEST_CASE(SimpleTest)
@@ -855,7 +855,7 @@ BOOST_AUTO_TEST_CASE(SimpleAsTupleTest)
 						0x65, 0x45, 0x6e, 0x75, 0x6d, 0x0,  0x2,  0x0,  0x0,  0x0,  0x0 };
 	uint8_t const* begin = data;
 	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
-	auto res = bobl::bson::decode<std::tuple<bool, int, std::string, TheEnumClass>>(begin, end);
+	auto res = bobl::bson::decode<std::tuple<bool, int, std::string, EnumClass>>(begin, end);
 	BOOST_CHECK_EQUAL(begin, end);
 	BOOST_CHECK(std::get<0>(res));
 	BOOST_CHECK_EQUAL(std::get<1>(res), 100);
@@ -875,7 +875,7 @@ BOOST_AUTO_TEST_CASE(SimpleAsImplicitTupleTest)
 					0x65, 0x45, 0x6e, 0x75, 0x6d, 0x0,  0x2,  0x0,  0x0,  0x0,  0x0};
 	uint8_t const* begin = data;
 	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
-	auto res = bobl::bson::decode<bool, int, std::string, TheEnumClass>(begin, end);
+	auto res = bobl::bson::decode<bool, int, std::string, EnumClass>(begin, end);
 	BOOST_CHECK_EQUAL(begin, end);
 	BOOST_CHECK(std::get<0>(res));
 	BOOST_CHECK_EQUAL(std::get<1>(res), 100);
@@ -906,7 +906,7 @@ BOOST_AUTO_TEST_CASE(SimpleOptioonalTest)
 	BOOST_CHECK_EQUAL(!simple.name, false);
 	BOOST_CHECK_EQUAL(simple.name.get(), std::string{ "the name" });
 	BOOST_CHECK_EQUAL(!simple.theEnum, false);
-	BOOST_CHECK(simple.theEnum.get() == TheEnumClass::Two);
+	BOOST_CHECK(simple.theEnum.get() == EnumClass::Two);
 	BOOST_CHECK(!simple.dummy1);
 	BOOST_CHECK(!simple.dummy2);
 	BOOST_CHECK(!simple.dummy3);
@@ -939,7 +939,7 @@ BOOST_AUTO_TEST_CASE(SimpleXTest)
 	BOOST_CHECK(boost::get<bool>(simple.enabled));
 	BOOST_CHECK_EQUAL(simple.id, 100);
 	BOOST_CHECK_EQUAL(boost::get<std::string>(simple.name), std::string{ "the name" });
-	BOOST_CHECK_EQUAL(int(boost::get<TheEnumClass>(simple.theEnum)), 2);
+	BOOST_CHECK_EQUAL(int(boost::get<EnumClass>(simple.theEnum)), 2);
 	BOOST_CHECK_EQUAL(begin, end);
 }
 
