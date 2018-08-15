@@ -133,7 +133,7 @@ install:
 before_script:
   - |
     if [[ "${COVERAGE}" == "ON" ]]; then
-      export B2FLAGS="${B2FLAGS} cxxflags=\"--coverage\" linkflags=\"--coverage\""
+      export B2FLAGS="${B2FLAGS} cxxflags=\"-fprofile-instr-generate\" cxxflags=\"-fcoverage-mapping\" linkflags=\"-fprofile-instr-generate\""
     fi
   - cd ${TRAVIS_BUILD_DIR} && curl --retry 5 -s https://raw.githubusercontent.com/serge-klim/cihelpers/master/project-config.jam > project-config.jam
 script:
@@ -141,6 +141,7 @@ script:
 after_success:
   - |
     if [[ "${COVERAGE}" == "ON" ]]; then
-      find  -name "*.gcno" -exec llvm-cov-6.0 gcov -f -b "{}" \; > /dev/null
+      llvm-profdata-6.0 merge -sparse default.profraw -o bobl.profdata
+      llvm-cov-6.0 show $(find tests/bin -name test) -instr-profile=bobl.profdata > coverage.txt
       bash <(curl -s https://codecov.io/bash)
     fi
