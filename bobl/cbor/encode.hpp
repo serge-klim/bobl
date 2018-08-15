@@ -21,7 +21,7 @@ std::vector<std::uint8_t> encode(Args&& ...args)
 
 template<typename ...Options, typename Iterator, typename ...Args>
 auto encode(Iterator out, Args&& ...args) ->
-	typename std::enable_if<std::is_same<typename std::iterator_traits<Iterator>::iterator_category, std::output_iterator_tag>::value, Iterator>::type
+	typename std::enable_if<!std::is_const<typename std::iterator_traits<Iterator>::value_type>::value, Iterator>::type
 {
 	return encoder::details::encode<bobl::Options<Options...>>(out, std::forward<Args>(args)...);
 }

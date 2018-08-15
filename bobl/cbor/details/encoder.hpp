@@ -46,7 +46,7 @@ public:
 	template<typename Iterator>
 	static Iterator encode(Iterator out, bool value)
 	{
-		out = value ? bobl::cbor::True : bobl::cbor::False;
+		*out = value ? bobl::cbor::True : bobl::cbor::False;
 		return ++out;
 	}
 };

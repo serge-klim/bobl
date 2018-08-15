@@ -259,7 +259,7 @@ Iterator unsigned_int_strict(Iterator out, cbor::MajorType type, T value)
 	value = T(boost::endian::native_to_big<typename workaround::ResolveAmbiguity<T>::type >(value));
 	auto begin = reinterpret_cast<std::uint8_t const*>(&value);
 	auto end = begin + sizeof(T) / sizeof(std::uint8_t);
-	out = std::uint8_t(type) | TypeAdditionalInfo<sizeof(T)>::value;
+	*out = std::uint8_t(type) | TypeAdditionalInfo<sizeof(T)>::value;
 	return std::copy(begin, end, ++out);
 
 }
@@ -270,7 +270,7 @@ Iterator unsigned_int(Iterator out, cbor::MajorType type, T value)
 	static_assert(std::is_integral<T>::value && !std::is_signed<T>::value, "T expected to be unsigned integral type");
 	if (value < 24)
 	{
-		out = std::uint8_t(std::uint8_t(value) | std::uint8_t(type));
+		*out = std::uint8_t(std::uint8_t(value) | std::uint8_t(type));
 		++out;
 	}
 	else

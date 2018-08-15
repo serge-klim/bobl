@@ -1,12 +1,16 @@
 // Copyright (c) 2015-2018 Serge Klimov serge.klim@outlook.com
 
 #pragma once
+#include "bobl/bson/details/header.hpp"
+#include "bobl/bson/details/options.hpp"
 #include "bobl/bson/adapter.hpp"
-#include "bobl/bson/options.hpp"
 #include "bobl/bson/bson.hpp"
+#include "bobl/utility/type_name.hpp"
+#include "bobl/utility/adapter.hpp"
 #include "bobl/utility/nvariant.hpp"
 #include "bobl/utility/timepoint.hpp"
 #include "bobl/utility/options.hpp"
+#include "bobl/utility/parameters.hpp"
 #include "bobl/utility/float.hpp"
 #include "bobl/utility/names.hpp"
 #include "bobl/utility/diversion.hpp"
