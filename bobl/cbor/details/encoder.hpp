@@ -15,6 +15,7 @@
 #include "bobl/utility/adapter.hpp"
 #include "bobl/utility/names.hpp"
 #include "bobl/utility/diversion.hpp"
+#include "bobl/names.hpp"
 #include "bobl/bobl.hpp"
 #include <boost/fusion/include/at.hpp>
 #include <boost/fusion/include/define_struct.hpp>
