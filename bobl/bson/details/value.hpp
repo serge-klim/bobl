@@ -24,6 +24,7 @@
 #include <boost/mpl/bool_fwd.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/range/iterator_range.hpp>
+#include <boost/variant/static_visitor.hpp>
 #include <boost/endian/conversion.hpp>
 #include <chrono>
 #include <vector>
@@ -346,14 +347,16 @@ class ValueHandler<diversion::variant<Params...>, Options, boost::mpl::true_>
 	using NestedValueHandler = typename bobl::utility::MakeVariant<TypesTuple>::type;
 
 	using ValueType = diversion::variant<Params...>;
-	struct ValueVisitor : public boost::static_visitor<ValueType>
+	struct ValueVisitor : boost::static_visitor<ValueType>
 	{
+		ValueVisitor() = default;
 		template<typename T>
 		ValueType operator()(T handler) const { return handler(); }
 	};
 
-	struct NameVisitor : public boost::static_visitor<diversion::string_view>
+	struct NameVisitor : boost::static_visitor<diversion::string_view>
 	{
+		NameVisitor() = default;
 		template<typename T>
 		ValueType operator()(T handler) const { return handler.name(); }
 	};

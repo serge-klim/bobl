@@ -16,6 +16,7 @@
 #include <boost/mpl/remove.hpp>
 #include <boost/mpl/bool_fwd.hpp>
 #include <boost/range/iterator_range.hpp>
+#include <boost/variant/static_visitor.hpp>
 #include <boost/endian/conversion.hpp>
 #include <type_traits>
 #include <cstdint>
@@ -61,8 +62,8 @@ class NameValue<diversion::optional<T>, Options, boost::mpl::true_>
 	using Value = typename details::EffectiveValueHandler<T, Options>::type;
 	NameValue(diversion::optional<Value>&& value) : value_{ std::move(value) } {}
 public:
-	diversion::string_view name() const { return !value_ ? diversion::string_view{} : value_.get().name(); }
-	diversion::optional<T> value() const { return !value_ ? diversion::nullopt : diversion::make_optional(value_.get()()); }
+	diversion::string_view name() const { return !value_ ? diversion::string_view{} : value_->name(); }
+	diversion::optional<T> value() const { return !value_ ? diversion::nullopt : diversion::make_optional((*value_)()); }
 	template<typename ExpectedName>
 	static NameValue decode(bobl::bson::flyweight::Iterator& begin, bobl::bson::flyweight::Iterator end, ExpectedName const& ename)
 	{ 
@@ -142,13 +143,15 @@ class NameValue<diversion::variant<Types...>, Options, typename bobl::utility::V
 	using HandlersTuple = typename boost::mpl::transform<TypesTuple, details::EffectiveValueHandler<boost::mpl::placeholders::_1, Options>>::type;
 	using ValueHandler = typename bobl::utility::MakeVariant<HandlersTuple>::type;
 
-	struct ValueVisitor : public boost::static_visitor<Value>
+	struct ValueVisitor : boost::static_visitor<Value>
 	{
+		ValueVisitor() = default;
 		template<typename T>
 		Value operator()(T handler) const { return { handler() }; }
 	};
-	struct NameVisitor : public boost::static_visitor<diversion::string_view>
+	struct NameVisitor : boost::static_visitor<diversion::string_view>
 	{
+		NameVisitor() = default;
 		template<typename T>
 		diversion::string_view operator()(T handler) const { return handler.name(); }
 	};

@@ -29,11 +29,9 @@ enum class MajorType : std::uint8_t
 	SimpleValue = Type::SimpleValue,
 };
 
-enum Mask : std::uint8_t
-{
-	MajorTypeMask = std::uint8_t(0xff << 5),
-	AditionalInfoMask = (0xff >> 3)
-};
+static constexpr std::uint8_t MajorTypeMask = std::uint8_t(0xff << 5);
+static constexpr std::uint8_t AditionalInfoMask = (0xff >> 3);
+
 
 template<std::size_t>
 struct TypeAdditionalInfo {};

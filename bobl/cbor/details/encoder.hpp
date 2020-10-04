@@ -24,6 +24,7 @@
 #include <boost/mpl/bool_fwd.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/endian/conversion.hpp>
+#include <boost/variant/static_visitor.hpp>
 #include <boost/format.hpp>
 #include <chrono>
 #include <vector>
@@ -275,7 +276,7 @@ public:
 	{
 		return !value
 			? encode_empty<Options>(std::move(out))
-			: details::encode<Options, Iterator, T>(std::move(out), value.get());
+			: details::encode<Options, Iterator, T>(std::move(out), *value);
 	}
 private:
 	template<typename Opts, typename Iterator>

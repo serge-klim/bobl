@@ -1,6 +1,10 @@
 project
-    : requirements 
+    : requirements
+    <toolset>msvc:<cxxflags>/std:c++11
+	<toolset>gcc:<cxxflags>-std=c++11
+    <toolset>clang:<cxxflags>-std=c++11
     <library>/boost//headers
+    <define>BOBL_PREFER_BOOST_TYPES__
 ;
 
 exe simple1 : simple1.cpp ;

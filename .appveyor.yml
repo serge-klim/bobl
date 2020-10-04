@@ -4,16 +4,27 @@ environment:
     BOOST_VER: x64-1.67
     BOOST_ROOT: C:\Libraries\boost_1_67_0
     BOOST_LIBS: C:\Libraries\boost_1_67_0\lib64-msvc-14.1
+    CPPSTD: c++11
     VCVARS: C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat
+
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+    BOOST_VER: x64-1.73
+    BOOST_ROOT: C:\Libraries\boost_1_73_0
+    BOOST_LIBS: C:\Libraries\boost_1_73_0\lib64-msvc-14.2
+    ADDRESS_MODEL: 64
+    CPPSTD: c++latest
+    VCVARS: C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat
 
 install:
   - call "%VCVARS%"
   - cd %BOOST_ROOT%
   - bootstrap.bat
   - cd %APPVEYOR_BUILD_FOLDER%
-  - curl --retry 5 -s https://raw.githubusercontent.com/serge-klim/cihelpers/master/project-config.jam > project-config.jam
+  - curl --retry 5 -s https://raw.githubusercontent.com/serge-klim/cihelpers/master/user-cfg.jam > user-cfg.jam
+
 build_script:
-  - ls %BOOST_LIBS%
   - >
-    "%BOOST_ROOT%\b2.exe" -sBOOST_ROOT=%BOOST_ROOT% -sBOOST_VER=%BOOST_VER% -sBOOST_LIBS=%BOOST_LIBS% toolset=msvc address-model=64 threading=multi -a
+    "%BOOST_ROOT%\b2.exe" -sBOOST_ROOT=%BOOST_ROOT% -sBOOST_BUILD_PATH=%BOOST_ROOT% -sBOOST_VER=%BOOST_VER% -sBOOST_LIBS=%BOOST_LIBS% toolset=msvc --user-config=%APPVEYOR_BUILD_FOLDER%/user-cfg.jam address-model=64 threading=multi cxxflags="-std:%CPPSTD%" -a
+
+
 

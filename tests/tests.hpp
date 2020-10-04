@@ -360,9 +360,9 @@ struct SupportedTypes
 	Simple simple;
 	std::vector<int> ints;
 	std::vector<Simple> simples;
-	boost::variant<int,Simple, std::string, std::vector<Simple>> var;
+	diversion::variant<int,Simple, std::string, std::vector<Simple>> var;
 	boost::uuids::uuid uuid;
-	boost::optional<EnumClass> enm;
+	diversion::optional<EnumClass> enm;
 	std::vector<std::uint8_t> binary; // this will be encoded as binary object
 	std::chrono::system_clock::time_point tp;
 };

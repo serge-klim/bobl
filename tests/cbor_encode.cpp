@@ -566,16 +566,16 @@ BOOST_AUTO_TEST_CASE(OptionalStructTest)
 	BOOST_CHECK_EQUAL(begin, end);
 	BOOST_CHECK(!simple.enabled);
 	BOOST_CHECK_EQUAL(!simple.id,false);
-	BOOST_CHECK_EQUAL(simple.id.get(), value.id.get());
+	BOOST_CHECK_EQUAL(*simple.id, *value.id);
 	BOOST_CHECK_EQUAL(!simple.name, false);
-	BOOST_CHECK_EQUAL(simple.name.get(), value.name.get());
+	BOOST_CHECK_EQUAL(*simple.name, *value.name);
 	BOOST_CHECK_EQUAL(!simple.theEnum, false);
-	BOOST_CHECK(simple.theEnum.get() == value.theEnum.get());
+	BOOST_CHECK(*simple.theEnum == *value.theEnum);
 	BOOST_CHECK(!simple.dummy1);
 	BOOST_CHECK_EQUAL(!simple.dummy2, false);
 	{
 		BOOST_CHECK_EQUAL(!simple.dummy2, false);
-		auto const& strings = simple.dummy2.get();
+		auto const& strings = *simple.dummy2;
 		BOOST_CHECK_EQUAL(strings.size(), 4);
 		BOOST_CHECK_EQUAL(strings[1], std::string{ "one" });
 	}
@@ -590,10 +590,10 @@ BOOST_AUTO_TEST_CASE(EmptySimpleXTest)
 	uint8_t const* end = begin + data.size();
 	auto simple = bobl::cbor::decode<SimpleVariant>(begin, end);
 	BOOST_CHECK_EQUAL(begin, end);
-	BOOST_CHECK(boost::get<std::string>(simple.enabled).empty());
+	BOOST_CHECK(diversion::get<std::string>(simple.enabled).empty());
 //	BOOST_CHECK_EQUAL(simple.id, 100);
-	BOOST_CHECK_EQUAL(boost::get<int>(simple.name), 0);
-	BOOST_CHECK(boost::get<EnumClass>(simple.theEnum) == EnumClass::None);
+	BOOST_CHECK_EQUAL(diversion::get<int>(simple.name), 0);
+	BOOST_CHECK(diversion::get<EnumClass>(simple.theEnum) == EnumClass::None);
 }
 
 
@@ -715,7 +715,7 @@ BOOST_AUTO_TEST_CASE(NamedVariantTest)
 	uint8_t const* end = begin + data.size();
 	auto variant = bobl::cbor::decode<NamedVariant>(begin, end);
 	BOOST_CHECK_EQUAL(begin, end);
-	auto simple = boost::get<Simple>(variant);
+	auto simple = diversion::get<Simple>(variant);
 	BOOST_CHECK(simple.enabled);
 	BOOST_CHECK_EQUAL(simple.id, 100);
 	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
@@ -733,7 +733,7 @@ BOOST_AUTO_TEST_CASE(NamedVariantPositionTest)
 	auto variant = bobl::cbor::decode<NamedVariant2>(begin, end);
 	BOOST_CHECK_EQUAL(begin, end);
 
-	auto simple = boost::get<Simple>(variant);
+	auto simple = diversion::get<Simple>(variant);
 	BOOST_CHECK(simple.enabled);
 	BOOST_CHECK_EQUAL(simple.id, 100);
 	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
@@ -749,7 +749,7 @@ BOOST_AUTO_TEST_CASE(NamedVariantOptionsTest)
 	uint8_t const* end = begin + data.size();
 	auto variant = bobl::cbor::decode<NamedVariant, bobl::Options<bobl::options::UseTypeName<NamedVariant>>>(begin, end);
 	BOOST_CHECK_EQUAL(begin, end);
-	auto simple = boost::get<Simple>(variant);
+	auto simple = diversion::get<Simple>(variant);
 	BOOST_CHECK(simple.enabled);
 	BOOST_CHECK_EQUAL(simple.id, 100);
 	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
@@ -764,7 +764,7 @@ BOOST_AUTO_TEST_CASE(NamedVariantAsVariantTest)
 	uint8_t const* end = begin + data.size();
 	auto res = bobl::cbor::decode<NamedVariant>(begin, end);
 	BOOST_CHECK_EQUAL(begin, end);
-	auto const& simple = boost::get<Simple>(res.named);
+	auto const& simple = diversion::get<Simple>(res.named);
 	BOOST_CHECK(simple.enabled);
 	BOOST_CHECK_EQUAL(simple.id, 100);
 	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
@@ -783,9 +783,9 @@ BOOST_AUTO_TEST_CASE(OptionalAsNullTest)
 	BOOST_CHECK_EQUAL(decoded.id, data.id);
 
 	begin = encoded.data();
-	auto decoded_tuple = bobl::cbor::decode<boost::optional<EnumClass>, boost::optional<int>>(begin, end);
+	auto decoded_tuple = bobl::cbor::decode<diversion::optional<EnumClass>, diversion::optional<int>>(begin, end);
 	BOOST_CHECK(!std::get<0>(decoded_tuple));
-	BOOST_CHECK_EQUAL(std::get<1>(decoded_tuple).get(), 123);
+	BOOST_CHECK_EQUAL(*std::get<1>(decoded_tuple), 123);
 }
 
 BOOST_AUTO_TEST_CASE(OptionalTest)
@@ -799,8 +799,8 @@ BOOST_AUTO_TEST_CASE(OptionalTest)
 	BOOST_CHECK_EQUAL(decoded.id, data.id);
 
 	begin = encoded.data();
-	auto decoded_tuple = bobl::cbor::decode<boost::optional<EnumClass>, boost::optional<int>>(begin, end);
-	BOOST_CHECK_EQUAL(int(std::get<0>(decoded_tuple).get()), 123);
+	auto decoded_tuple = bobl::cbor::decode<diversion::optional<EnumClass>, diversion::optional<int>>(begin, end);
+	BOOST_CHECK_EQUAL(int(*std::get<0>(decoded_tuple)), 123);
 	BOOST_CHECK(!std::get<1>(decoded_tuple));
 
 	begin = encoded.data();

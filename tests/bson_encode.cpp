@@ -450,16 +450,16 @@ BOOST_AUTO_TEST_CASE(OptionalStructTest)
 	auto simple = bobl::bson::cast<SimpleOptional>(doc);
 	BOOST_CHECK(!simple.enabled);
 	BOOST_CHECK_EQUAL(!simple.id,false);
-	BOOST_CHECK_EQUAL(simple.id.get(), value.id.get());
+	BOOST_CHECK_EQUAL(*simple.id, *value.id);
 	BOOST_CHECK_EQUAL(!simple.name, false);
-	BOOST_CHECK_EQUAL(simple.name.get(), value.name.get());
+	BOOST_CHECK_EQUAL(*simple.name, *value.name);
 	BOOST_CHECK_EQUAL(!simple.theEnum, false);
-	BOOST_CHECK(simple.theEnum.get() == value.theEnum.get());
+	BOOST_CHECK(*simple.theEnum == *value.theEnum);
 	BOOST_CHECK(!simple.dummy1);
 	BOOST_CHECK_EQUAL(!simple.dummy2, false);
 	{
 		BOOST_CHECK_EQUAL(!simple.dummy2, false);
-		auto const& strings = simple.dummy2.get();
+		auto const& strings = *simple.dummy2;
 		BOOST_CHECK_EQUAL(strings.size(), 4);
 		BOOST_CHECK_EQUAL(strings[1], std::string{ "one" });
 	}
@@ -476,10 +476,10 @@ BOOST_AUTO_TEST_CASE(EmptySimpleXTest)
 	BOOST_CHECK_EQUAL(begin, end);
 	auto simple = bobl::bson::cast<SimpleVariant>(doc);
 	BOOST_CHECK_EQUAL(begin, end);
-	BOOST_CHECK(boost::get<std::string>(simple.enabled).empty());
+	BOOST_CHECK(diversion::get<std::string>(simple.enabled).empty());
 	//	BOOST_CHECK_EQUAL(simple.id, 100);
-	BOOST_CHECK_EQUAL(boost::get<int>(simple.name), 0);
-	BOOST_CHECK(boost::get<EnumClass>(simple.theEnum) == EnumClass::None);
+	BOOST_CHECK_EQUAL(diversion::get<int>(simple.name), 0);
+	BOOST_CHECK(diversion::get<EnumClass>(simple.theEnum) == EnumClass::None);
 }
 
 BOOST_AUTO_TEST_CASE(OrderedFlotDictionaryTest, *boost::unit_test::tolerance(0.00001))
@@ -592,7 +592,7 @@ BOOST_AUTO_TEST_CASE(NamedVariantTest)
 	auto doc = bobl::bson::flyweight::Document::decode(begin, end);
 	BOOST_CHECK_EQUAL(begin, end);
 	auto variant = bobl::bson::cast<NamedVariant>(doc);
-	auto simple = boost::get<Simple>(variant);
+	auto simple = diversion::get<Simple>(variant);
 	BOOST_CHECK(simple.enabled);
 	BOOST_CHECK_EQUAL(simple.id, 100);
 	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
@@ -611,7 +611,7 @@ BOOST_AUTO_TEST_CASE(NamedVariantPositionTest)
 
 	using NamedVariant2 = diversion::variant<Simple, bobl::UseTypeName, Extended>;
 	auto variant = bobl::bson::cast<NamedVariant2>(doc);
-	auto simple = boost::get<Simple>(variant);
+	auto simple = diversion::get<Simple>(variant);
 	BOOST_CHECK(simple.enabled);
 	BOOST_CHECK_EQUAL(simple.id, 100);
 	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
@@ -628,7 +628,7 @@ BOOST_AUTO_TEST_CASE(NamedVariantOptionsTest)
 	auto doc = bobl::bson::flyweight::Document::decode(begin, end);
 	BOOST_CHECK_EQUAL(begin, end);
 	auto variant = bobl::bson::cast<NamedVariant, bobl::Options<bobl::options::UseTypeName<NamedVariant>>>(doc);
-	auto simple = boost::get<Simple>(variant);
+	auto simple = diversion::get<Simple>(variant);
 	BOOST_CHECK(simple.enabled);
 	BOOST_CHECK_EQUAL(simple.id, 100);
 	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
@@ -647,13 +647,13 @@ BOOST_AUTO_TEST_CASE(FewNamedVariantTest)
 	BOOST_CHECK_EQUAL(begin, end);
 	auto res = bobl::bson::cast<std::tuple<NamedVariant, NamedVariant>>(doc);
 	auto variant1 = std::get<0>(res);
-	auto simple = boost::get<Simple>(variant1);
+	auto simple = diversion::get<Simple>(variant1);
 	BOOST_CHECK(simple.enabled);
 	BOOST_CHECK_EQUAL(simple.id, 100);
 	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
 	BOOST_CHECK_EQUAL(int(simple.theEnum), 2);
 	auto variant2 = std::get<1>(res);
-	auto extended = boost::get<Extended>(variant2);
+	auto extended = diversion::get<Extended>(variant2);
 	BOOST_CHECK_EQUAL(extended.id, 303);
 	BOOST_CHECK_EQUAL(extended.simple.enabled, false);
 	BOOST_CHECK_EQUAL(extended.simple.id, 707);
@@ -672,7 +672,7 @@ BOOST_AUTO_TEST_CASE(NamedVariantAsVariantTest)
 	auto doc = bobl::bson::flyweight::Document::decode(begin, end);
 	BOOST_CHECK_EQUAL(begin, end);
 	auto res = bobl::bson::cast<NamedVariant>(doc);
-	auto const& simple = boost::get<Simple>(res.named);
+	auto const& simple = diversion::get<Simple>(res.named);
 	BOOST_CHECK(simple.enabled);
 	BOOST_CHECK_EQUAL(simple.id, 100);
 	BOOST_CHECK_EQUAL(simple.name, std::string{ "the name" });
@@ -691,9 +691,9 @@ BOOST_AUTO_TEST_CASE(OptionalAsNullTest)
 	BOOST_CHECK_EQUAL(decoded.id, data.id);
 
 	begin = encoded.data();
-	auto decoded_tuple = bobl::bson::decode<boost::optional<EnumClass>, boost::optional<int>>(begin, end);
+	auto decoded_tuple = bobl::bson::decode<diversion::optional<EnumClass>, diversion::optional<int>>(begin, end);
 	BOOST_CHECK(!std::get<0>(decoded_tuple));
-	BOOST_CHECK_EQUAL(std::get<1>(decoded_tuple).get(), 123);
+	BOOST_CHECK_EQUAL(*std::get<1>(decoded_tuple), 123);
 }
 
 BOOST_AUTO_TEST_CASE(OptionalTest)
@@ -707,8 +707,8 @@ BOOST_AUTO_TEST_CASE(OptionalTest)
 	BOOST_CHECK_EQUAL(decoded.id, data.id);
 
 	begin = encoded.data();
-	auto decoded_tuple = bobl::bson::decode<boost::optional<Enum>, boost::optional<int>>(begin, end);
-	BOOST_CHECK_EQUAL(int(std::get<0>(decoded_tuple).get()), 123);
+	auto decoded_tuple = bobl::bson::decode<diversion::optional<Enum>, diversion::optional<int>>(begin, end);
+	BOOST_CHECK_EQUAL(int(*std::get<0>(decoded_tuple)), 123);
 	BOOST_CHECK(!std::get<1>(decoded_tuple));
 
 	begin = encoded.data();

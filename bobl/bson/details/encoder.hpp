@@ -24,6 +24,7 @@
 #include <boost/endian/conversion.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/format.hpp>
+#include <boost/variant/static_visitor.hpp>
 #include <chrono>
 #include <vector>
 #include <string>
@@ -202,7 +203,7 @@ public:
 	{
 		return !value
 			? encode_empty<Options>(std::move(out), std::move(name))
-			: details::encode<Options, Iterator, T>(std::move(out), std::move(name), value.get());
+			: details::encode<Options, Iterator, T>(std::move(out), std::move(name), *value);
 	}
 private:
 	template<typename Opts, typename Iterator>
@@ -326,28 +327,19 @@ public:
 		return encode(out, sequence);
 	}
 private:
-	template<std::size_t N, typename U>
-	static auto name() -> typename std::enable_if<HeterogeneousArray::value, decltype(diversion::to_string(N))>::type
-	{
-		return diversion::to_string(N);
-	}
-
-	template<std::size_t N, typename U>
-	static auto name()
-		-> typename std::enable_if<!HeterogeneousArray::value, decltype(bobl::utility::GetNameType<bobl::MemberName<T, U, N, typename bobl::bson::EffectiveOptions<T, Options>::type>>::type::name())>::type
-	{
-		using MemberName = typename bobl::utility::GetNameType<bobl::MemberName<T, U, N, typename bobl::bson::EffectiveOptions<T, Options>::type>>::type;
-		return MemberName::name();
-	}
-
 	template<std::size_t N, typename U, typename Iterator>
 	static typename std::enable_if<boost::fusion::result_of::size<U>::value != N, Iterator>::type encode(Iterator out, U const& sequence)
 	{
 		using Type = typename boost::fusion::result_of::value_at_c<U, N>::type;
-		auto const& n = name<N, Type>();
-		out = details::encode<Options, Iterator, Type>(out, diversion::string_view{ n }, boost::fusion::at_c<N>(sequence));
+		struct PositionAsName { static auto name() -> decltype(diversion::to_string(N)) { return diversion::to_string(N); } };
+		using MemberName = typename std::conditional<HeterogeneousArray::value
+													, PositionAsName
+													, typename bobl::utility::GetNameType<bobl::MemberName<T, Type, N, typename bobl::bson::EffectiveOptions<T, Options>::type>>::type>::type;
+
+		out = details::encode<Options, Iterator, Type>(out, diversion::string_view{ MemberName::name() }, boost::fusion::at_c<N>(sequence));
 		return encode<N + 1>(std::move(out), sequence);
 	}
+
 
 	template<std::size_t N, typename U, typename Iterator>
 	static typename std::enable_if<boost::fusion::result_of::size<U>::value == N, Iterator>::type encode(Iterator out, U const& /*sequence*/) { return out; }

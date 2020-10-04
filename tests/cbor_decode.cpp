@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE(OptionalTest)
 	auto resx = bobl::cbor::decode<diversion::optional<std::vector<int>>>(begin, end);
 	BOOST_CHECK_EQUAL(begin, end);
 	BOOST_CHECK_EQUAL(!resx, false);
-	auto& res = resx.get();
+	auto& res = *resx;
 	BOOST_CHECK_EQUAL(res.size(), 4);
 	BOOST_CHECK_EQUAL(res[0], 0);
 	BOOST_CHECK_EQUAL(res[1], 1);
@@ -323,13 +323,13 @@ BOOST_AUTO_TEST_CASE(SimpleOptionalTest)
 	BOOST_CHECK_EQUAL(begin, end);
 
 	BOOST_CHECK_EQUAL(!simple.enabled, false);
-	BOOST_CHECK(simple.enabled.get());
+	BOOST_CHECK(*simple.enabled);
 	BOOST_CHECK_EQUAL(!simple.id, false);
-	BOOST_CHECK_EQUAL(simple.id.get(), 100);
+	BOOST_CHECK_EQUAL(*simple.id, 100);
 	BOOST_CHECK_EQUAL(!simple.name, false);
-	BOOST_CHECK_EQUAL(simple.name.get(), std::string{ "the name" });
+	BOOST_CHECK_EQUAL(*simple.name, std::string{ "the name" });
 	BOOST_CHECK_EQUAL(!simple.theEnum, false);
-	BOOST_CHECK(simple.theEnum.get() == EnumClass::Two);
+	BOOST_CHECK(*simple.theEnum == EnumClass::Two);
 	BOOST_CHECK(!simple.dummy1);
 	BOOST_CHECK(!simple.dummy2);
 	BOOST_CHECK(!simple.dummy3);
@@ -347,10 +347,10 @@ BOOST_AUTO_TEST_CASE(SimpleXTest)
 	uint8_t const* begin = data;
 	uint8_t const* end = begin + sizeof(data) / sizeof(data[0]);
 	auto simple = bobl::cbor::decode<SimpleVariant>(begin, end);
-	BOOST_CHECK(boost::get<bool>(simple.enabled));
+	BOOST_CHECK(diversion::get<bool>(simple.enabled));
 	BOOST_CHECK_EQUAL(simple.id, 100);
-	BOOST_CHECK_EQUAL(boost::get<std::string>(simple.name), std::string{ "the name" });
-	BOOST_CHECK_EQUAL(int(boost::get<EnumClass>(simple.theEnum)), 2);
+	BOOST_CHECK_EQUAL(diversion::get<std::string>(simple.name), std::string{ "the name" });
+	BOOST_CHECK_EQUAL(int(diversion::get<EnumClass>(simple.theEnum)), 2);
 	BOOST_CHECK_EQUAL(begin, end);
 }
 

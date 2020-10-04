@@ -36,7 +36,7 @@ auto read(Iterator& begin, Iterator end) -> typename std::enable_if<!std::is_poi
 	{
 		if (begin == end)
 			throw bobl::InputToShort{ "input to short" };
-		res << 8;
+		//res = res << 8;
 		res |= T(*begin++);
 	}
 }

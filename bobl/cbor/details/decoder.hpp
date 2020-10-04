@@ -326,8 +326,10 @@ public:
 				throw bobl::InvalidObject(str(boost::format("not enough data provided to decode indefinite length CBOR \"%1%\"") %
 				(value_decoder == &Handler::decode_pair<Iterator> ? "dictionary" : "array")));
 			if (*begin == cbor::Break)
+			{
 				++begin;
 				break;
+			}
 			(*value_decoder)(begin, end);
 		}
 	}
