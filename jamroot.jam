@@ -1,5 +1,6 @@
 import boost ;
 boost.use-project ;
+import testing ;
 
 project
     : requirements

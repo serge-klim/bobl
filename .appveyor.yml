@@ -4,8 +4,18 @@ environment:
     BOOST_VER: x64-1.67
     BOOST_ROOT: C:\Libraries\boost_1_67_0
     BOOST_LIBS: C:\Libraries\boost_1_67_0\lib64-msvc-14.1
-    CPPSTD: c++11
-    VCVARS: C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat
+    CPPSTD: c++14
+    VCVARS: >
+      "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
+
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+    BOOST_VER: x64-1.73
+    BOOST_ROOT: C:\Libraries\boost_1_73_0
+    BOOST_LIBS: C:\Libraries\boost_1_73_0\lib64-msvc-14.2
+    ADDRESS_MODEL: 64
+    CPPSTD: c++17
+    VCVARS: >
+      "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
 
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
     BOOST_VER: x64-1.73
@@ -13,10 +23,11 @@ environment:
     BOOST_LIBS: C:\Libraries\boost_1_73_0\lib64-msvc-14.2
     ADDRESS_MODEL: 64
     CPPSTD: c++latest
-    VCVARS: C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat
+    VCVARS: >
+      "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
 
 install:
-  - call "%VCVARS%"
+  - call %VCVARS%
   - cd %BOOST_ROOT%
   - bootstrap.bat
   - cd %APPVEYOR_BUILD_FOLDER%
@@ -24,7 +35,13 @@ install:
 
 build_script:
   - >
-    "%BOOST_ROOT%\b2.exe" -sBOOST_ROOT=%BOOST_ROOT% -sBOOST_BUILD_PATH=%BOOST_ROOT% -sBOOST_VER=%BOOST_VER% -sBOOST_LIBS=%BOOST_LIBS% toolset=msvc --user-config=%APPVEYOR_BUILD_FOLDER%/user-cfg.jam address-model=64 threading=multi cxxflags="-std:%CPPSTD%" -a
+    "%BOOST_ROOT%\b2.exe" -sBOOST_ROOT=%BOOST_ROOT% -sBOOST_BUILD_PATH=%BOOST_ROOT% -sBOOST_VER=%BOOST_VER% -sBOOST_LIBS=%BOOST_LIBS% 
+    --user-config=%APPVEYOR_BUILD_FOLDER%/user-cfg.jam 
+    toolset=msvc address-model=64 threading=multi cxxflags="-std:%CPPSTD%"
+    testing.arg="--logger=JUNIT,all,unittests.xml --report_sink=stdout --report_level=short" -a debug
+
+on_finish:
+  - curl --retry 5 -F "file=@unittests.xml" "https://ci.appveyor.com/api/testresults/junit/%APPVEYOR_JOB_ID%"
 
 
 
