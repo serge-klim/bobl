@@ -158,6 +158,7 @@ inline const char* to_string(BinSubtype subtype)
 		break;
 		case BinaryOld:
 			res = "Binary (old)";
+        break;
 		case UuidOld:
 			res = "UUID (old)";
 		break;

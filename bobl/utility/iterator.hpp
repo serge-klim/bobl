@@ -4,7 +4,9 @@
 #include "bobl/bobl.hpp"
 #include <boost/iterator/iterator_facade.hpp>
 #include <iterator>
+#include <cstring>
 #include <type_traits>
+
 
 namespace bobl{ namespace utility{
 
@@ -23,7 +25,9 @@ auto read(Iterator& begin, Iterator end) -> typename std::enable_if<std::is_poin
 {
 	if (std::size_t(std::distance(begin, end)) < sizeof(T))
 		throw bobl::InputToShort{ "input to short" };
-	auto res = *reinterpret_cast<T const*>(begin);
+//	auto res = *reinterpret_cast<T const*>(begin);
+    T res;
+    std::memcpy(&res, reinterpret_cast<char const*>(begin), sizeof(T));
 	std::advance(begin, sizeof(T));
 	return res;
 }
